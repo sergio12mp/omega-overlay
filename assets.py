@@ -12,10 +12,14 @@ import threading
 import time
 import urllib.request
 
-HERE = os.path.dirname(os.path.abspath(__file__))
+import sys
+
+FROZEN = bool(getattr(sys, "frozen", False))
+HERE = getattr(sys, "_MEIPASS", os.path.dirname(os.path.abspath(__file__)))
 MANIFEST_PATH = os.path.join(HERE, "data", "assets_manifest.json")
 # copia manual antigua (prototipo); OMEGA_ASSETS_LEGACY=0 la ignora
-LEGACY_DIR = None if os.environ.get("OMEGA_ASSETS_LEGACY") == "0" else os.path.join(HERE, "assets")
+LEGACY_DIR = (None if FROZEN or os.environ.get("OMEGA_ASSETS_LEGACY") == "0"
+              else os.path.join(HERE, "assets"))
 USER_AGENT = "OmegaOverlay/0.1"
 
 

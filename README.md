@@ -16,7 +16,18 @@ Solo lee la memoria del juego; nunca escribe en ella.
 - Exporta el equipo en formato Pokémon Showdown con un clic.
 - Detecta solo la versión del juego (1.0 o 1.4), también en ROMs randomizadas.
 
-## Uso rápido (prototipo, requiere Python 3.8+)
+## Instalar (Windows)
+1. Descarga `OmegaOverlay-X.Y.Z-instalador.exe` de la página de *Releases* (o el `.zip` portable).
+2. Ejecútalo. No pide permisos de administrador.
+   Windows puede avisar con SmartScreen porque el programa aún no está firmado:
+   *Más información → Ejecutar de todas formas*.
+3. Abre **Omega Overlay**. La ventana te dice si Azahar está conectado y te guía para
+   activar el RPC; el panel para OBS se abre solo en el navegador.
+
+Tus datos (recursos descargados, `equipo_showdown.txt`, `logo.png`, registro) van en
+`%APPDATA%\OmegaOverlay` (botón «Abrir carpeta de datos»).
+
+## Desde el código (requiere Python 3.8+)
 1. Azahar: *Emulación → Configurar → Depuración → Activar servidor RPC* (antes de arrancar el juego).
 2. Arranca el juego y carga tu partida.
 3. `python omega_reader.py` (con `--probe` solo comprueba la conexión).
@@ -26,6 +37,14 @@ Solo lee la memoria del juego; nunca escribe en ella.
 ¿Sin emulador a mano? `python tests/demo_azahar.py` arranca todo con un Azahar simulado.
 
 Más opciones en [LEEME.txt](LEEME.txt).
+
+## Compilar el .exe y el instalador
+```
+powershell -ExecutionPolicy Bypass -File builduild.ps1
+```
+Crea `dist\OmegaOverlay\OmegaOverlay.exe` y, si tienes Inno Setup 6, el instalador.
+Al subir una etiqueta `vX.Y.Z` (igual a `VERSION` en `app.py`), GitHub Actions compila y
+publica el instalador y el zip en *Releases*.
 
 ## Tests
 Sin emulador ni partida: los tests usan un Azahar simulado (`tests/fake_azahar.py`)
