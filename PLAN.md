@@ -73,12 +73,12 @@ Pendiente: editor de distribución propia (arrastrar y soltar), guardar presets 
 y nombres de especie en español (Fase 3).
 Hecho: opción mote / especie / ambos y título automático según el juego detectado.
 
-### Fase 2 — MVP distribuible (1-2 semanas) — en curso (rama `fase2-exe`)
+### Fase 2 — MVP distribuible (1-2 semanas) — en curso
 1. ✅ Ventana de escritorio mínima (Tkinter, sin dependencias): semáforo RPC / juego / versión, URL de OBS con botón copiar, selector de estilo con vista previa, botón "Copiar paste de Showdown".
 2. ✅ Guía en la ventana mientras Azahar no conecta (en vez de asistente aparte). Asistente de primer arranque: explica cómo activar el RPC en Azahar (Emulación → Configurar → Depuración) y comprueba la conexión.
 3. Mensajes de error comprensibles (RPC apagado, juego no soportado, versión de Azahar desconocida).
 4. ✅ PyInstaller `--onedir` (menos falsos positivos que `--onefile`) + instalador Inno Setup.
-5. Release `v0.1.0` en GitHub con el `.exe` generado por CI (workflow listo, falta la primera etiqueta). Repo pasa a público.
+5. ✅ Release [`v0.1.0`](https://github.com/sergio12mp/omega-overlay/releases/tag/v0.1.0) en GitHub con instalador y zip portable generados por CI (14-11-2026). Pendiente: pasar el repo a público (decisión aplazada).
 
 **Prueba:** una persona ajena instala en un PC sin Python y ve su equipo en OBS en menos de 10 minutos.
 
