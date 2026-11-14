@@ -1,0 +1,95 @@
+/* Omega Overlay — estilos compartidos por la escena completa y los widgets.
+   Cada estilo (data-style en <body>) solo cambia variables. */
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:"Trebuchet MS","Segoe UI",system-ui,sans-serif;color:#fff;background:transparent}
+
+:root{
+  --zone-bg:linear-gradient(180deg,rgba(15,1,5,.55),rgba(60,6,16,.45));
+  --zone-bd:rgba(255,200,107,.65); --zone-glow:rgba(255,106,26,.35);
+  --card-bg:linear-gradient(135deg,rgba(90,10,26,.85),rgba(20,2,8,.85));
+  --card-bd:rgba(255,200,107,.55); --card-in:rgba(255,106,26,.25);
+  --txt:#fff; --sub:#ffc86b; --dim:#ddd; --bar-bg:rgba(0,0,0,.6); --radius:8px;
+  --plate:radial-gradient(circle at 35% 30%,rgba(255,200,107,.35),rgba(20,2,8,.85) 70%);
+  --plate-bd:rgba(255,200,107,.7); --lbl:#ffc86b;
+}
+body[data-style=dex]{
+  --zone-bg:linear-gradient(180deg,rgba(2,20,34,.78),rgba(3,36,52,.62));
+  --zone-bd:rgba(80,230,255,.8); --zone-glow:rgba(40,200,255,.45);
+  --card-bg:repeating-linear-gradient(0deg,rgba(255,255,255,.04) 0 2px,transparent 2px 4px),
+            linear-gradient(135deg,rgba(6,52,74,.92),rgba(2,22,36,.92));
+  --card-bd:rgba(80,230,255,.75); --card-in:rgba(40,200,255,.35);
+  --sub:#7ff0ff; --dim:#bfefff; --radius:3px;
+  --plate:radial-gradient(circle at 50% 40%,rgba(80,230,255,.28),rgba(2,22,36,.9) 70%);
+  --plate-bd:rgba(80,230,255,.85); --lbl:#7ff0ff;
+}
+body[data-style=clasico]{
+  --zone-bg:linear-gradient(180deg,rgba(250,250,250,.92),rgba(225,225,230,.92));
+  --zone-bd:#c8102e; --zone-glow:rgba(200,16,46,.45);
+  --card-bg:linear-gradient(135deg,#fff 0%,#f1f1f4 60%,#e0e0e8 100%);
+  --card-bd:#c8102e; --card-in:rgba(0,0,0,.12);
+  --txt:#1b1b22; --sub:#c8102e; --dim:#444; --bar-bg:rgba(0,0,0,.18); --radius:14px;
+  --plate:radial-gradient(circle at 35% 30%,#fff,#d9d9e2 75%);
+  --plate-bd:#c8102e; --lbl:#7a0a1c;
+}
+body[data-style=cristal]{
+  --zone-bg:rgba(10,10,14,.28); --zone-bd:rgba(255,255,255,.35); --zone-glow:rgba(255,255,255,.12);
+  --card-bg:rgba(255,255,255,.10); --card-bd:rgba(255,255,255,.28); --card-in:rgba(255,255,255,.08);
+  --sub:#ffe3a6; --dim:#e8e8e8; --radius:16px;
+  --plate:rgba(255,255,255,.12); --plate-bd:rgba(255,255,255,.4); --lbl:#ffe3a6;
+}
+
+/* ---------- Zona con marco ---------- */
+.zone{position:absolute;border-radius:10px;background:var(--zone-bg);border:2px solid var(--zone-bd);
+  box-shadow:inset 0 0 18px var(--zone-glow),0 0 14px var(--zone-glow)}
+
+/* ---------- Equipo ---------- */
+.team{display:grid;gap:6px}
+.card{position:relative;display:flex;align-items:center;gap:4px;padding:2px 8px 2px 2px;min-width:0;
+  border-radius:var(--radius);border:1px solid var(--card-bd);overflow:hidden;color:var(--txt);
+  background:var(--card-bg);box-shadow:inset 0 0 10px var(--card-in)}
+.card.empty{opacity:.28;border-style:dashed}
+.card.empty .spr{visibility:hidden}
+.card.ko{filter:grayscale(1) brightness(.75)}
+.spr{position:relative;width:84px;height:84px;flex:none}
+.spr img{width:84px;height:84px;filter:drop-shadow(0 3px 4px rgba(0,0,0,.55))}
+.itm{position:absolute;right:-2px;bottom:-2px;width:24px;height:24px;transform:scale(1.25);
+  transform-origin:100% 100%;image-rendering:pixelated;background:url(/assets/itemicons-sheet.png) no-repeat;
+  filter:drop-shadow(0 1px 2px rgba(0,0,0,.9))}
+body[data-item=nombre] .itm,body[data-item=no] .itm{display:none}
+body.no-itemsheet .itm{display:none}
+.card .info{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px}
+.card .nm{font-weight:800;font-size:17px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.card .lv{font-size:14px;color:var(--sub);font-weight:700}
+.card .bar{height:9px;border-radius:5px;background:var(--bar-bg);overflow:hidden;border:1px solid rgba(128,128,128,.4)}
+.card .bar i{display:block;height:100%;width:0;background:linear-gradient(#7dff7d,#1fb83a);transition:width .5s}
+.card .bar i.mid{background:linear-gradient(#ffe46a,#d9a800)}
+.card .bar i.low{background:linear-gradient(#ff8a7a,#d02212)}
+.card .hp{font-size:12px;color:var(--dim)}
+.card .hn{font-size:11px;color:var(--sub);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:700}
+body[data-item=icono] .hn,body[data-item=no] .hn{display:none}
+body.no-itemsheet[data-item=icono] .hn{display:block}
+.card .st{display:none;position:absolute;right:6px;top:4px;font-size:11px;font-weight:800;
+  padding:1px 5px;border-radius:4px;background:#6a1a8a;color:#fff}
+
+/* Tarjeta vertical: sprite arriba, datos debajo (barras horizontales estrechas) */
+.team.vert .card{flex-direction:column;justify-content:center;padding:4px 8px 6px;gap:2px;text-align:center}
+.team.vert .card .info{width:100%;align-items:stretch}
+.team.vert .card .nm{font-size:16px}
+.team.vert .card .hp{text-align:center}
+
+/* ---------- Medallas ---------- */
+.badges{display:grid;gap:4px;justify-items:center;align-items:center}
+.badge{display:flex;flex-direction:column;align-items:center;gap:1px;font-size:11px;color:var(--lbl);font-weight:700}
+.badge .pl{width:62px;height:62px;display:flex;align-items:center;justify-content:center;transition:filter .5s,opacity .5s}
+.badge img,.badge svg{max-width:46px;max-height:46px;filter:drop-shadow(0 2px 3px rgba(0,0,0,.6))}
+body[data-badges=placa] .badge .pl{border-radius:50%;background:var(--plate);border:2px solid var(--plate-bd)}
+body[data-badges=escudo] .badge .pl{background:var(--plate);border:2px solid var(--plate-bd);
+  clip-path:polygon(50% 0,100% 18%,100% 62%,50% 100%,0 62%,0 18%);padding-bottom:6px}
+body[data-badges=plano] .badge img,body[data-badges=plano] .badge svg{max-width:56px;max-height:56px}
+.badge.off .pl{filter:grayscale(1) brightness(.35);opacity:.55}
+.badge.off{opacity:.8}
+body.no-labels .badge span{display:none}
+
+/* ---------- Estado de conexión ---------- */
+.status{font-size:12px;color:#ffc86b;text-shadow:0 1px 3px #000;opacity:.9}
+.status.bad{color:#ff7a6a}

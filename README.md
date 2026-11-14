@@ -9,15 +9,21 @@ Solo lee la memoria del juego; nunca escribe en ella.
 ## Qué hace
 - Equipo de 6 con nivel, vida, estado y objeto equipado.
 - Medallas conseguidas.
-- 4 estilos de overlay (`magma`, `dex`, `clasico`, `cristal`).
+- **Panel de configuración** con vista previa en vivo: eliges, copias la URL y la pegas en OBS.
+- **Escena completa** con 3 distribuciones (En L, Barra inferior, Columna lateral) o
+  **piezas sueltas** (equipo en fila/columna/rejilla, medallas, un Pokémon por fuente).
+- 4 estilos (`magma`, `dex`, `clasico`, `cristal`) y 3 fondos de medallas.
 - Exporta el equipo en formato Pokémon Showdown con un clic.
 - Detecta solo la versión del juego (1.0 o 1.4), también en ROMs randomizadas.
 
 ## Uso rápido (prototipo, requiere Python 3.8+)
 1. Azahar: *Emulación → Configurar → Depuración → Activar servidor RPC* (antes de arrancar el juego).
 2. Arranca el juego y carga tu partida.
-3. `python omega_reader.py --probe` para comprobar la conexión; `python omega_reader.py` para dejarlo funcionando.
-4. OBS: *Fuente de navegador* → `http://localhost:8765/` → 1920 × 1080.
+3. `python omega_reader.py` (con `--probe` solo comprueba la conexión).
+4. Se abre el panel (`http://localhost:8765/panel`): elige distribución y estilo, pulsa
+   **Copiar URL** y pégala en OBS como *Fuente de navegador* con el tamaño que indica.
+
+¿Sin emulador a mano? `python tests/demo_azahar.py` arranca todo con un Azahar simulado.
 
 Más opciones en [LEEME.txt](LEEME.txt).
 

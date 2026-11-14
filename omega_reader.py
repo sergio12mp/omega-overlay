@@ -7,7 +7,8 @@ desde Azahar (servidor RPC, UDP 45987) y los sirve a un overlay de OBS.
      (actívalo ANTES de arrancar el juego).
   2) Arranca el juego en Azahar.
   3) python omega_reader.py
-  4) OBS: fuente de navegador -> http://localhost:8765/  (1920 x 1080)
+  4) Se abre el panel (http://localhost:8765/panel): elige distribución y estilo,
+     copia la URL y pégala en OBS como fuente de navegador.
 
 Paste de Showdown:  http://localhost:8765/showdown   (página con botón Copiar)
                     http://localhost:8765/showdown.txt
@@ -366,6 +367,12 @@ this.textContent='¡Copiado!'">Copiar</button>
 &nbsp;Recarga la página para actualizar. También se guarda en equipo_showdown.txt.</p>
 <textarea id="t" readonly>%s</textarea></body></html>"""
 
+PAGES = {
+    "/": "/overlay/scene.html",          # escena completa (URL histórica de OBS)
+    "/index.html": "/overlay/scene.html",
+    "/panel": "/overlay/panel.html",     # panel de configuración con vista previa
+    "/widget": "/overlay/widget.html",   # piezas sueltas
+}
 ALLOWED_EXT = {".html", ".png", ".jpg", ".jpeg", ".webp", ".gif", ".svg", ".css", ".js", ".woff2", ".ttf"}
 
 
@@ -405,10 +412,14 @@ class Handler(http.server.SimpleHTTPRequestHandler):
             self.end_headers()
             self.wfile.write(body)
             return
-        if path == "/styles":
-            self.path = "/styles.html"
-        elif path in ("/", "/index.html"):
-            self.path = "/overlay_omega_ruby_v3.html" + (("?" + self.path.split("?", 1)[1]) if "?" in self.path else "")
+        query = ("?" + self.path.split("?", 1)[1]) if "?" in self.path else ""
+        if path in ("/styles", "/panel/"):
+            self.send_response(302)
+            self.send_header("Location", "/panel")
+            self.end_headers()
+            return
+        if path in PAGES:
+            self.path = PAGES[path] + query
         elif os.path.splitext(path)[1].lower() not in ALLOWED_EXT or path.endswith(".py"):
             self.send_error(404)
             return
@@ -463,6 +474,7 @@ def main():
     ap.add_argument("--port", type=int, default=8765, help="puerto HTTP del overlay (8765)")
     ap.add_argument("--rpc-port", type=int, default=45987, help="puerto RPC de Azahar (45987)")
     ap.add_argument("--interval", type=float, default=1.0, help="segundos entre lecturas (1.0)")
+    ap.add_argument("--no-browser", action="store_true", help="no abrir el panel en el navegador al arrancar")
     ap.add_argument("-v", "--verbose", action="store_true")
     a = ap.parse_args()
 
@@ -490,8 +502,13 @@ def main():
 
     threading.Thread(target=reader_loop, args=(rpc, a.interval, a.verbose), daemon=True).start()
     srv = Server(("127.0.0.1", a.port), Handler)
-    print("Overlay: http://localhost:%d/   (estado: http://localhost:%d/state.json)" % (a.port, a.port))
+    panel = "http://localhost:%d/panel" % a.port
+    print("Panel (elige el diseño y copia la URL para OBS): " + panel)
+    print("Escena completa por defecto: http://localhost:%d/   (estado: /state.json)" % a.port)
     print("Ctrl+C para salir.")
+    if not a.no_browser:
+        import webbrowser
+        threading.Timer(0.5, webbrowser.open, args=(panel,)).start()
     try:
         srv.serve_forever()
     except KeyboardInterrupt:

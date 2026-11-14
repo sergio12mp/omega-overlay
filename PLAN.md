@@ -58,6 +58,17 @@ Cada fase acaba con una prueba concreta; no se pasa a la siguiente sin superarla
 
 **Prueba:** captura de OBS con equipo, objetos y medallas correctos; paste importado en Showdown sin errores.
 
+### Interfaz y distribuciones (hecho en `layouts-panel`)
+Mezcla de lo mejor de Pokélink (una fuente de navegador por pieza, un Pokémon por fuente) y del
+Stream Tool (escena completa con marco), con un panel que ninguno de los dos tiene:
+- Panel web (`/panel`) con galería de distribuciones en miniatura, vista previa en vivo,
+  equipo de ejemplo si Azahar no está conectado, botón Copiar URL e instrucciones de OBS con
+  el tamaño exacto y la posición de la captura.
+- Escena completa: En L, Barra inferior, Columna lateral (definidas en `overlay/layouts.js`).
+- Piezas sueltas: 5 de equipo, 3 de medallas y Pokémon individual (n=1..6).
+- Medallas propias en SVG cuando no está el arte oficial.
+Pendiente: editor de distribución propia (arrastrar y soltar) y guardar presets con nombre.
+
 ### Fase 2 — MVP distribuible (1-2 semanas)
 1. Ventana de escritorio mínima (Tkinter, sin dependencias): semáforo RPC / juego / versión, URL de OBS con botón copiar, selector de estilo con vista previa, botón "Copiar paste de Showdown".
 2. Asistente de primer arranque: explica cómo activar el RPC en Azahar (Emulación → Configurar → Depuración) y comprueba la conexión.
