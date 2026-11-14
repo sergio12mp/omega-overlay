@@ -107,11 +107,12 @@
       <div class="row"><label>Estilo</label><div class="chips" id="style"></div></div>
       <div class="row"><label>Medallas</label><div class="chips" id="badges"></div></div>
       <div class="row"><label>Objeto</label><div class="chips" id="item"></div></div>
+      <div class="row"><label>Nombre</label><div class="chips" id="nombre"></div></div>
       <div class="row" id="rowSlot" hidden><label for="slotN">Pokémon nº</label>
         <input type="number" id="slotN" min="1" max="6" value="1" style="width:70px">
         <span class="muted">Crea una fuente por cada número (1 a 6).</span></div>
       <div class="row" id="rowTitle"><label for="titulo">Título</label>
-        <input type="text" id="titulo" placeholder="Omega Ruby (o pon logo.png junto al programa)" style="flex:1"></div>
+        <input type="text" id="titulo" placeholder="Automático: Rubí Omega o Zafiro Alfa (o pon logo.png junto al programa)" style="flex:1"></div>
       <div class="row" id="rowPie"><label for="pie">Texto extra</label>
         <input type="text" id="pie" placeholder="Ej.: Nuzlocke · Intentos: 3" style="flex:1"></div>
       <div class="row"><label>Opciones</label>
@@ -163,10 +164,11 @@ const ORIGIN = location.origin.startsWith("http") ? location.origin : "http://lo
 const STYLES = { magma: ["Magma", "#ff6a1a"], dex: ["Dex", "#28c8ff"], clasico: ["Clásico", "#c8102e"], cristal: ["Cristal", "#e8e8f0"] };
 const BADGES = { placa: "Placa", plano: "Sin fondo", escudo: "Escudo" };
 const ITEMS = { icono: "Icono", nombre: "Nombre", ambos: "Icono y nombre", no: "No mostrar" };
+const NAMES = { mote: "Mote", especie: "Especie", ambos: "Mote y especie" };
 
 const saved = JSON.parse(localStorage.getItem("oo-panel") || "{}");
 const S = Object.assign({ mode: "scene", scene: "ele", widget: "equipo-fila", style: "magma", badges: "placa",
-  item: "icono", n: 1, titulo: "", pie: "", labels: true, vacios: true, demo: false, hole: true }, saved);
+  item: "icono", nombre: "mote", n: 1, titulo: "", pie: "", labels: true, vacios: true, demo: false, hole: true }, saved);
 let connected = false;
 
 /* ---------- URLs ---------- */
@@ -174,6 +176,7 @@ function params(forPreview) {
   const p = new URLSearchParams();
   if (S.mode === "scene") p.set("layout", S.scene); else p.set("tipo", S.widget);
   p.set("style", S.style); p.set("badges", S.badges); p.set("item", S.item);
+  if (S.nombre !== "mote") p.set("nombre", S.nombre);
   if (!S.labels) p.set("labels", "0");
   if (S.mode === "scene") { if (S.titulo) p.set("titulo", S.titulo); if (S.pie) p.set("pie", S.pie); }
   else {
@@ -206,7 +209,7 @@ function buildGallery() {
     b.onclick = () => { S[S.mode === "scene" ? "scene" : "widget"] = key; update(); };
     g.appendChild(b);
     const sz = S.mode === "scene" ? { w: 1920, h: 1080 } : widgetSize(key);
-    const p = new URLSearchParams({ style: S.style, badges: S.badges, item: S.item, demo: "1" });
+    const p = new URLSearchParams({ style: S.style, badges: S.badges, item: S.item, nombre: S.nombre, demo: "1" });
     p.set(S.mode === "scene" ? "layout" : "tipo", key);
     if (S.mode === "scene") p.set("preview", "1");
     const fr = b.querySelector("iframe");
@@ -222,11 +225,11 @@ function chips(id, map, key) {
     const c = document.createElement("button");
     c.className = "chip"; c.dataset.k = k;
     c.innerHTML = Array.isArray(v) ? `<i class="sw" style="background:${v[1]}"></i>${v[0]}` : v;
-    c.onclick = () => { S[key] = k; if (key === "style") buildGallery(); update(); };
+    c.onclick = () => { S[key] = k; buildGallery(); update(); };
     box.appendChild(c);
   });
 }
-chips("style", STYLES, "style"); chips("badges", BADGES, "badges"); chips("item", ITEMS, "item");
+chips("style", STYLES, "style"); chips("badges", BADGES, "badges"); chips("item", ITEMS, "item"); chips("nombre", NAMES, "nombre");
 document.querySelectorAll("#mode button").forEach(b => b.onclick = () => { S.mode = b.dataset.mode; buildGallery(); update(); });
 [["titulo", "value"], ["pie", "value"], ["slotN", "value", "n"], ["labels", "checked"], ["vacios", "checked"],
  ["demo", "checked"], ["hole", "checked"]].forEach(([id, prop, key]) => {
@@ -245,7 +248,7 @@ function update() {
   document.querySelectorAll("#mode button").forEach(b => b.setAttribute("aria-pressed", b.dataset.mode === S.mode));
   const cur = S.mode === "scene" ? S.scene : S.widget;
   document.querySelectorAll(".lay").forEach(b => b.setAttribute("aria-pressed", b.dataset.key === cur));
-  [["style", S.style], ["badges", S.badges], ["item", S.item]].forEach(([id, v]) =>
+  [["style", S.style], ["badges", S.badges], ["item", S.item], ["nombre", S.nombre]].forEach(([id, v]) =>
     $(id).querySelectorAll(".chip").forEach(c => c.setAttribute("aria-pressed", c.dataset.k === v)));
   const isScene = S.mode === "scene";
   $("rowTitle").hidden = $("rowPie").hidden = !isScene;
@@ -306,7 +309,7 @@ async function poll() {
   const was = connected;
   if (st.ok && st.party && st.party.length) {
     connected = true; pill.className = "pill ok";
-    txt.textContent = `Conectado · v${st.game_version} · ${st.party.length} Pokémon · ${(st.badges || []).filter(Boolean).length} medallas`;
+    txt.textContent = `Conectado · ${st.game_name || "ORAS"} v${st.game_version} · ${st.party.length} Pokémon · ${(st.badges || []).filter(Boolean).length} medallas`;
     $("help").classList.remove("show");
   } else if (st.ok) {
     connected = false; pill.className = "pill warn";

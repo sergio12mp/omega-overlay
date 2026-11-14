@@ -21,7 +21,7 @@ PK6_SIZE = R.SLOT_DATA + R.STAT_SIZE  # 232 cifrados + 22 de stats
 def make_pk6(species, level, hp, max_hp, name="", item=0, status=0, pv=0x12345678,
              nature=3, ability=66, gender="M", moves=(53, 0, 0, 0),
              evs=(0, 0, 0, 0, 0, 0), ivs=(31, 31, 31, 31, 31, 31), nicknamed=False,
-             tid=12345, sid=54321, pid=0xDEADBEEF, form=0):
+             tid=12345, sid=54321, pid=0xDEADBEEF, form=0, game=27):
     """PK6 descifrado (254 bytes). evs/ivs en orden PK6: HP, Atk, Def, Spe, SpA, SpD."""
     d = bytearray(PK6_SIZE)
     struct.pack_into("<I", d, 0x00, pv)
@@ -46,6 +46,7 @@ def make_pk6(species, level, hp, max_hp, name="", item=0, status=0, pv=0x1234567
     if nicknamed:
         iv32 |= 1 << 31
     struct.pack_into("<I", d, 0x74, iv32)
+    d[0xDF] = game
     d[0xE8] = status
     d[0xEC] = level
     struct.pack_into("<H", d, 0xF0, hp)

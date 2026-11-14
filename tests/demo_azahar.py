@@ -15,9 +15,9 @@ import fake_azahar as F  # noqa: E402
 from fake_azahar import R  # noqa: E402
 
 TEAM = [  # especie, nivel, vida, máx, nombre, objeto, estado
-    (257, 36, 112, 120, "Blaziken", 251, 0),
+    (257, 36, 112, 120, "Pollo", 251, 0),
     (277, 33, 52, 98, "Swellow", 237, 0),
-    (282, 34, 18, 96, "Gardevoir", 0, 1),
+    (282, 34, 18, 96, "Gardi", 0, 1),
     (306, 35, 0, 110, "Aggron", 321, 0),
     (310, 32, 90, 90, "Manectric", 0, 0),
     (319, 31, 70, 88, "Sharpedo", 0, 5),
