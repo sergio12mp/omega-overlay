@@ -134,6 +134,18 @@
     </section>
 
     <section>
+      <h2>Medallas e iconos oficiales</h2>
+      <p id="assetsText" class="muted" style="margin:0 0 10px">Comprobando…</p>
+      <div class="row" style="margin:0">
+        <button class="btn sec" id="assetsBtn" hidden>Descargar ahora</button>
+        <span id="assetsErr" class="muted" style="color:var(--bad)"></span>
+      </div>
+      <p class="muted" style="margin:10px 0 0">Son arte de Nintendo / Game Freak, así que no vienen con el programa:
+        se descargan una vez desde fuentes públicas (<span id="assetsSrc"></span>) a tu PC.
+        Sin ellos se usan medallas propias y el nombre del objeto.</p>
+    </section>
+
+    <section>
       <h2>Equipo para Pokémon Showdown</h2>
       <p class="muted" style="margin:0 0 10px">Copia tu equipo actual (movimientos, EVs, IVs, naturaleza) para importarlo en Showdown.</p>
       <button class="btn sec" id="showdown">Copiar equipo para Showdown</button>
@@ -306,7 +318,39 @@ async function poll() {
   if (was !== connected) update();
 }
 
-buildGallery(); update(); poll(); setInterval(poll, 2000);
+/* ---------- Recursos gráficos ---------- */
+let assetsWasRunning = false;
+async function pollAssets() {
+  let st;
+  try { st = await (await fetch("/assets/status.json", { cache: "no-store" })).json(); }
+  catch (e) { $("assetsText").textContent = "El lector no responde."; return; }
+  const kb = Math.max(1, Math.round(st.bytes_missing / 1024));
+  $("assetsSrc").textContent = Object.values(st.sources || {}).map(s => s.name).join(" y ");
+  $("assetsErr").textContent = st.job.errors.length && !st.job.running
+    ? "No se pudieron descargar " + st.job.errors.length + " archivos. Revisa tu conexión y reintenta." : "";
+  const btn = $("assetsBtn");
+  if (st.complete) {
+    $("assetsText").innerHTML = `<b style="color:var(--ok)">✓ Listos</b> — ${st.total} archivos en tu PC.`;
+    btn.hidden = true;
+  } else if (st.job.running) {
+    $("assetsText").textContent = `Descargando… ${st.job.done} de ${st.job.total}`;
+    btn.hidden = true;
+  } else {
+    $("assetsText").textContent = `Faltan ${st.missing.length} de ${st.total} archivos (${kb} KB).`;
+    btn.hidden = false; btn.textContent = st.job.errors.length ? "Reintentar" : "Descargar ahora";
+  }
+  if (assetsWasRunning && !st.job.running) { lastPrev = ""; buildGallery(); update(); }
+  assetsWasRunning = st.job.running;
+  clearTimeout(pollAssets.t);
+  pollAssets.t = setTimeout(pollAssets, st.job.running ? 1000 : 10000);
+}
+$("assetsBtn").onclick = async () => {
+  $("assetsBtn").hidden = true;
+  try { await fetch("/assets/download", { method: "POST" }); } catch (e) {}
+  assetsWasRunning = true; pollAssets();
+};
+
+buildGallery(); update(); poll(); setInterval(poll, 2000); pollAssets();
 </script>
 </body>
 </html>

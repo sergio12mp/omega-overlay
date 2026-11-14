@@ -52,7 +52,7 @@ Cada fase acaba con una prueba concreta; no se pasa a la siguiente sin superarla
 ### Fase 1 — Validar el prototipo con la partida real (1 semana)
 1. Refactor mínimo a la estructura `core/ server/ overlay/` sin cambiar comportamiento.
 2. Tests con RPC simulado: equipo, medallas, objetos, versión 1.0/1.4.
-3. Descargador de recursos: medallas ORAS e iconos de objetos desde el repositorio público de assets del Stream Tool / Showdown, con manifiesto (URL + SHA-256), reintentos y modo sin conexión.
+3. ✅ Descargador de recursos (`assets.py`, rama `assets-descarga`): medallas ORAS e iconos de objetos desde el repositorio público de assets del Stream Tool / Showdown, con manifiesto (URL + SHA-256), reintentos y modo sin conexión.
 4. Cotejar con el juego: objetos (251, 237, 321), paste de Showdown frente a PKHeX, 3 medallas.
 5. Ver el overlay con datos reales en OBS.
 
