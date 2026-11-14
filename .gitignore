@@ -1,0 +1,22 @@
+# Arte de terceros (Nintendo / Game Freak / Showdown): se descarga, no se distribuye
+assets/badges/
+assets/itemicons-sheet.png
+assets/sprites/
+assets/cache/
+
+# Datos del usuario
+equipo_showdown.txt
+logo.png
+
+# Python / builds
+__pycache__/
+*.pyc
+build/out/
+dist/
+*.spec.bak
+.venv/
+
+# Sistema
+Thumbs.db
+desktop.ini
+.DS_Store

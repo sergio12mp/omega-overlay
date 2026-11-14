@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Overlay Omega Ruby v3 (automático) - 1920x1080</title>
+<!--
+  OVERLAY AUTOMÁTICO PARA OBS (1920x1080) — equipo, objetos y medallas leídos solos desde Azahar.
+  Lo sirve omega_reader.py:  OBS > Fuente de navegador > URL  http://localhost:8765/  > 1920 x 1080
+
+  OPCIONES (se añaden a la URL, separadas por &):
+    ?style=magma | dex | clasico | cristal      estilo de tarjetas y panel         (por defecto: magma)
+    &badges=placa | plano | escudo               fondo de las medallas oficiales    (por defecto: placa)
+    &item=icono | nombre | ambos | no            cómo mostrar el objeto equipado    (por defecto: icono)
+    &preview                                     muestra el hueco negro del juego
+  Ejemplo:  http://localhost:8765/?style=dex&badges=escudo&item=ambos
+  Y  http://localhost:8765/styles  muestra los 4 estilos de golpe para elegir.
+-->
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{width:1920px;height:1080px;overflow:hidden;background:transparent;
+    font-family:"Trebuchet MS","Segoe UI",system-ui,sans-serif;color:#fff}
+  body.preview{background:#222}
+
+  /* ---------- FONDO TEMÁTICO CON HUECO EN L (se recorta desde JS) ---------- */
+  #bg{
+    position:absolute;inset:0;overflow:hidden;
+    background:
+      radial-gradient(ellipse 55% 40% at 12% 100%, rgba(255,106,26,.55), transparent 70%),
+      radial-gradient(ellipse 45% 45% at 92% 100%, rgba(255,60,20,.5), transparent 70%),
+      radial-gradient(ellipse 70% 60% at 80% 0%, rgba(170,12,40,.85), transparent 75%),
+      linear-gradient(160deg,#2a040c 0%,#5a0a1a 45%,#1d0309 100%);
+  }
+  #bg::before{
+    content:"";position:absolute;inset:0;opacity:.18;
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='56' height='100' viewBox='0 0 56 100'><path d='M28 66L0 50V16L28 0l28 16v34L28 66zM28 100L0 84V66m56 18L28 100' fill='none' stroke='%23ff8a4a' stroke-width='1.5'/></svg>");
+    background-size:56px 100px;
+  }
+  .cracks{position:absolute;inset:0;width:100%;height:100%;
+    filter:drop-shadow(0 0 6px #ff6a1a) drop-shadow(0 0 14px #ff3a10);
+    animation:pulse 4s ease-in-out infinite}
+  @keyframes pulse{0%,100%{opacity:.5}50%{opacity:1}}
+  .ember{position:absolute;bottom:-10px;width:6px;height:6px;border-radius:50%;
+    background:radial-gradient(#ffd27a,#ff6a1a 60%,transparent 70%);
+    animation:rise linear infinite;opacity:0}
+  @keyframes rise{0%{transform:translateY(0) translateX(0);opacity:0}
+    10%{opacity:.9}100%{transform:translateY(-1100px) translateX(40px);opacity:0}}
+
+  /* ---------- MARCO (SVG) ---------- */
+  #frame{position:absolute;inset:0;width:1920px;height:1080px;pointer-events:none}
+
+  /* ---------- ZONA DE INFO ---------- */
+  #zone{
+    position:absolute;border-radius:10px;
+    background:linear-gradient(180deg,rgba(15,1,5,.55),rgba(60,6,16,.45));
+    border:2px solid rgba(255,200,107,.65);
+    box-shadow:inset 0 0 18px rgba(255,106,26,.35),0 0 14px rgba(255,106,26,.35);
+  }
+  #zone .guide{display:none}
+  body.preview #zone .guide{
+    display:flex;position:absolute;left:8px;right:8px;align-items:center;justify-content:center;
+    border:2px dashed #7fffd4;color:#7fffd4;font-size:15px;text-align:center;line-height:1.3;
+    background:rgba(0,0,0,.35)}
+  #hole{display:none;position:absolute;inset:0;background:#000}
+  body.preview #hole{display:block}
+  .hint{display:none;position:absolute;left:50px;top:200px;color:#7fffd4;font-size:18px;
+    text-shadow:0 1px 3px #000}
+  body.preview .hint{display:block}
+
+  /* ---------- LOGO (esquina superior izquierda) Y PIE ---------- */
+  #logo{position:absolute;left:50px;top:14px;height:150px;width:700px;display:flex;
+    align-items:center;justify-content:flex-start}
+  #logo img{max-height:150px;max-width:700px;filter:drop-shadow(0 3px 6px rgba(0,0,0,.8))}
+  #logoText{font-size:56px;font-weight:800;letter-spacing:6px;text-transform:uppercase;
+    background:linear-gradient(#ffe3a6,#ff7a2a 60%,#a0160f);-webkit-background-clip:text;
+    background-clip:text;color:transparent;filter:drop-shadow(0 2px 3px #000)}
+  #footer{position:absolute;left:50px;top:1020px;font-size:26px;font-weight:700;
+    letter-spacing:2px;text-shadow:0 2px 6px #000;color:#ffc86b}
+
+  /* ---------- ESTILOS (variables) ---------- */
+  :root{
+    --zone-bg:linear-gradient(180deg,rgba(15,1,5,.55),rgba(60,6,16,.45));
+    --zone-bd:rgba(255,200,107,.65); --zone-glow:rgba(255,106,26,.35);
+    --card-bg:linear-gradient(135deg,rgba(90,10,26,.85),rgba(20,2,8,.85));
+    --card-bd:rgba(255,200,107,.55); --card-in:rgba(255,106,26,.25);
+    --txt:#fff; --sub:#ffc86b; --dim:#ddd; --bar-bg:rgba(0,0,0,.6); --radius:8px;
+    --plate:radial-gradient(circle at 35% 30%,rgba(255,200,107,.35),rgba(20,2,8,.85) 70%);
+    --plate-bd:rgba(255,200,107,.7); --lbl:#ffc86b;
+  }
+  body[data-style=dex]{
+    --zone-bg:linear-gradient(180deg,rgba(2,20,34,.78),rgba(3,36,52,.62));
+    --zone-bd:rgba(80,230,255,.8); --zone-glow:rgba(40,200,255,.45);
+    --card-bg:repeating-linear-gradient(0deg,rgba(255,255,255,.04) 0 2px,transparent 2px 4px),
+              linear-gradient(135deg,rgba(6,52,74,.92),rgba(2,22,36,.92));
+    --card-bd:rgba(80,230,255,.75); --card-in:rgba(40,200,255,.35);
+    --sub:#7ff0ff; --dim:#bfefff; --radius:3px;
+    --plate:radial-gradient(circle at 50% 40%,rgba(80,230,255,.28),rgba(2,22,36,.9) 70%);
+    --plate-bd:rgba(80,230,255,.85); --lbl:#7ff0ff;
+  }
+  body[data-style=clasico]{
+    --zone-bg:linear-gradient(180deg,rgba(250,250,250,.92),rgba(225,225,230,.92));
+    --zone-bd:#c8102e; --zone-glow:rgba(200,16,46,.45);
+    --card-bg:linear-gradient(135deg,#fff 0%,#f1f1f4 60%,#e0e0e8 100%);
+    --card-bd:#c8102e; --card-in:rgba(0,0,0,.12);
+    --txt:#1b1b22; --sub:#c8102e; --dim:#444; --bar-bg:rgba(0,0,0,.18); --radius:14px;
+    --plate:radial-gradient(circle at 35% 30%,#fff,#d9d9e2 75%);
+    --plate-bd:#c8102e; --lbl:#7a0a1c;
+  }
+  body[data-style=cristal]{
+    --zone-bg:rgba(10,10,14,.28); --zone-bd:rgba(255,255,255,.35); --zone-glow:rgba(255,255,255,.12);
+    --card-bg:rgba(255,255,255,.10); --card-bd:rgba(255,255,255,.28); --card-in:rgba(255,255,255,.08);
+    --sub:#ffe3a6; --dim:#e8e8e8; --radius:16px;
+    --plate:rgba(255,255,255,.12); --plate-bd:rgba(255,255,255,.4); --lbl:#ffe3a6;
+  }
+  #zone{background:var(--zone-bg)!important;border-color:var(--zone-bd)!important;
+    box-shadow:inset 0 0 18px var(--zone-glow),0 0 14px var(--zone-glow)!important}
+
+  /* ---------- EQUIPO ---------- */
+  #team{position:absolute;left:8px;right:8px;top:8px;display:grid;
+    grid-template-columns:1fr 1fr;grid-template-rows:repeat(3,1fr);gap:6px}
+  .card{position:relative;display:flex;align-items:center;gap:4px;padding:2px 8px 2px 2px;
+    border-radius:var(--radius);border:1px solid var(--card-bd);overflow:hidden;color:var(--txt);
+    background:var(--card-bg);box-shadow:inset 0 0 10px var(--card-in)}
+  .card.empty{opacity:.28;border-style:dashed}
+  .card.empty .spr{visibility:hidden}
+  .card.ko{filter:grayscale(1) brightness(.75)}
+  .spr{position:relative;width:84px;height:84px;flex:none}
+  .spr img{width:84px;height:84px;filter:drop-shadow(0 3px 4px rgba(0,0,0,.55))}
+  .itm{position:absolute;right:-2px;bottom:-2px;width:24px;height:24px;transform:scale(1.25);
+    transform-origin:100% 100%;image-rendering:pixelated;background:url(assets/itemicons-sheet.png) no-repeat;
+    filter:drop-shadow(0 1px 2px rgba(0,0,0,.9))}
+  body[data-item=nombre] .itm,body[data-item=no] .itm{display:none}
+  .card .info{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px}
+  .card .nm{font-weight:800;font-size:17px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .card .lv{font-size:14px;color:var(--sub);font-weight:700}
+  .card .bar{height:9px;border-radius:5px;background:var(--bar-bg);overflow:hidden;
+    border:1px solid rgba(128,128,128,.4)}
+  .card .bar i{display:block;height:100%;background:linear-gradient(#7dff7d,#1fb83a);transition:width .5s}
+  .card .bar i.mid{background:linear-gradient(#ffe46a,#d9a800)}
+  .card .bar i.low{background:linear-gradient(#ff8a7a,#d02212)}
+  .card .hp{font-size:12px;color:var(--dim);display:flex;justify-content:space-between;gap:6px}
+  .card .hn{font-size:11px;color:var(--sub);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+    max-width:100%;font-weight:700}
+  body[data-item=icono] .hn,body[data-item=no] .hn{display:none}
+  .card .st{position:absolute;right:6px;top:4px;font-size:11px;font-weight:800;
+    padding:1px 5px;border-radius:4px;background:#6a1a8a;color:#fff}
+
+  /* ---------- MEDALLAS (iconos oficiales de ORAS) ---------- */
+  #badges{position:absolute;left:8px;right:8px;bottom:8px;display:grid;
+    grid-template-columns:repeat(4,1fr);grid-template-rows:1fr 1fr;gap:4px;justify-items:center;align-items:center}
+  .badge{display:flex;flex-direction:column;align-items:center;gap:1px;font-size:11px;
+    color:var(--lbl);font-weight:700}
+  .badge .pl{width:62px;height:62px;display:flex;align-items:center;justify-content:center;
+    transition:filter .5s,opacity .5s}
+  .badge img{max-width:46px;max-height:46px;filter:drop-shadow(0 2px 3px rgba(0,0,0,.6))}
+  body[data-badges=placa] .badge .pl{border-radius:50%;background:var(--plate);border:2px solid var(--plate-bd)}
+  body[data-badges=escudo] .badge .pl{background:var(--plate);border:2px solid var(--plate-bd);
+    clip-path:polygon(50% 0,100% 18%,100% 62%,50% 100%,0 62%,0 18%);border-radius:0;
+    box-shadow:none;padding-bottom:6px}
+  body[data-badges=plano] .badge img{max-width:56px;max-height:56px}
+  .badge.off .pl{filter:grayscale(1) brightness(.35);opacity:.55}
+  .badge.off{opacity:.8}
+  #status{position:absolute;right:8px;top:-22px;font-size:12px;color:#ffc86b;
+    text-shadow:0 1px 3px #000;opacity:.9}
+  #status.bad{color:#ff7a6a}
+</style>
+</head>
+<body>
+
+<div id="hole"></div>
+
+<div id="bg">
+  <svg class="cracks" viewBox="0 0 1920 1080" fill="none" stroke="#ff7a2a" stroke-width="3"
+       stroke-linecap="round" stroke-linejoin="round">
+    <path d="M0 20 L60 40 L50 80 L110 110 L100 160"/>
+    <path d="M800 8 L860 40 L930 14 L1020 44 L1100 18 L1180 50"/>
+    <path d="M1250 170 L1300 140 L1340 160"/>
+    <path d="M0 1010 L70 1040 L50 1075"/>
+    <path d="M500 1060 L560 1030 L640 1060 L720 1022 L800 1056"/>
+    <path d="M1100 1040 L1180 1018 L1240 1058 L1330 1024"/>
+    <path d="M1500 1050 L1600 1022 L1680 1062 L1780 1030 L1860 1062"/>
+    <path d="M1910 460 L1900 520 L1915 570"/>
+  </svg>
+</div>
+
+<svg id="frame" viewBox="0 0 1920 1080" fill="none">
+  <defs>
+    <radialGradient id="rv" cx="35%" cy="30%" r="75%">
+      <stop offset="0" stop-color="#ffe3a6"/><stop offset=".55" stop-color="#e0902b"/>
+      <stop offset="1" stop-color="#6a2a08"/></radialGradient>
+    <linearGradient id="dvg" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#2a040c"/><stop offset=".5" stop-color="#9a1428"/>
+      <stop offset="1" stop-color="#2a040c"/></linearGradient>
+    <filter id="glow" x="-50%" y="-5%" width="200%" height="110%">
+      <feDropShadow dx="0" dy="0" stdDeviation="9" flood-color="#ff6a1a" flood-opacity=".9"/></filter>
+  </defs>
+  <path id="pGlow" stroke="#ff6a1a" stroke-width="10" stroke-linejoin="round" filter="url(#glow)" opacity=".85"/>
+  <path id="pDark" stroke="#3a0610" stroke-width="7" stroke-linejoin="round"/>
+  <path id="pGold" stroke="#ffc86b" stroke-width="3" stroke-linejoin="round"/>
+  <rect id="divider" fill="url(#dvg)" stroke="#ffc86b" stroke-width="3" filter="url(#glow)"/>
+  <g id="rivets" stroke="#2a1008" stroke-width="2"></g>
+</svg>
+
+<div id="zone">
+  <div id="team"></div>
+  <div id="badges"></div>
+  <div id="status">conectando…</div>
+</div>
+<div class="hint">PREVIEW: negro = juego (pantalla grande y pequeña)</div>
+
+<div id="footer"></div>
+<div id="logo"><img id="logoImg" alt=""><span id="logoText" style="display:none">Omega Ruby</span></div>
+
+<script>
+/* ===================== CONFIG ===================== */
+const CONFIG = {
+  logo: "logo.png",          // tu imagen (png transparente) junto a este archivo
+  logoTexto: "Omega Ruby",   // texto de reserva si no hay logo
+  footer: "",                // texto opcional abajo a la izquierda (intentos, muertes...)
+
+  /* Geometría, en píxeles de TU captura ya recortada (2558 x 1281).
+     Medida desde tu imagen:
+       - pantalla grande:  x 0..1866, y 161..1281   (1866 x 1120)
+       - pantalla pequeña: x 1866..2558, y 0..520   (692 x 520)
+     "place" es dónde pones la captura en el lienzo de 1920x1080 (x, y y ancho). */
+  geom: {
+    capture: { w: 2558, h: 1281 },
+    top:     { x: 0,    y: 161, w: 1866, h: 1120 },
+    bottom:  { x: 1866, y: 0,   w: 692,  h: 520  },
+    place:   { x: 30,   y: 60,  w: 1860 }
+  }
+};
+/* ================================================== */
+
+if (location.search.includes("preview")) document.body.classList.add("preview");
+
+/* --- geometría --- */
+const g = CONFIG.geom;
+const s = g.place.w / g.capture.w;
+const mx = x => Math.round((g.place.x + x * s) * 10) / 10;
+const my = y => Math.round((g.place.y + y * s) * 10) / 10;
+const T = g.top, B = g.bottom;
+const pts = [
+  [T.x, T.y], [T.x + T.w, T.y], [T.x + T.w, B.y], [B.x + B.w, B.y],
+  [B.x + B.w, B.y + B.h], [T.x + T.w, B.y + B.h], [T.x + T.w, T.y + T.h], [T.x, T.y + T.h]
+].map(([x, y]) => [mx(x), my(y)]);
+
+const holeStr = pts.concat([pts[0]]).map(p => `${p[0]}px ${p[1]}px`).join(",");
+document.getElementById("bg").style.clipPath =
+  `polygon(evenodd, 0px 0px,1920px 0px,1920px 1080px,0px 1080px,0px 0px,${holeStr})`;
+document.getElementById("hole").style.clipPath = `polygon(${holeStr})`;
+
+/* un marco propio para cada pantalla + una barra divisoria entre las dos */
+const rect = r => {
+  const x0 = mx(r.x), y0 = my(r.y), x1 = mx(r.x + r.w), y1 = my(r.y + r.h);
+  return { x0, y0, x1, y1, d: `M${x0} ${y0}L${x1} ${y0}L${x1} ${y1}L${x0} ${y1}Z` };
+};
+const rT = rect(T), rB = rect(B);
+const d = rT.d + rB.d;
+["pGlow", "pDark", "pGold"].forEach(id => document.getElementById(id).setAttribute("d", d));
+const half = 10;  // medio ancho de la barra divisoria (px del lienzo)
+const dv = document.getElementById("divider");
+dv.setAttribute("x", rT.x1 - half);
+dv.setAttribute("width", half * 2);
+dv.setAttribute("y", rT.y0);                       // desde el borde superior de la pantalla grande
+dv.setAttribute("height", rB.y1 - rT.y0);          // hasta el borde inferior de la pequeña
+const corners = [
+  [rT.x0, rT.y0], [rT.x1, rT.y0], [rT.x1, rT.y1], [rT.x0, rT.y1],
+  [rB.x0, rB.y0], [rB.x1, rB.y0], [rB.x1, rB.y1], [rB.x0, rB.y1]
+];
+const rv = document.getElementById("rivets");
+corners.forEach(p => {
+  const c = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+  c.setAttribute("cx", p[0]); c.setAttribute("cy", p[1]); c.setAttribute("r", 10);
+  c.setAttribute("fill", "url(#rv)"); rv.appendChild(c);
+});
+
+/* --- zona de info: debajo de la pantalla pequeña, a la derecha de la grande --- */
+const pad = 14;
+const zx = mx(T.x + T.w) + pad, zy = my(B.y + B.h) + pad;
+const zw = mx(B.x + B.w) - mx(T.x + T.w) - pad * 2;
+const zh = my(T.y + T.h) - my(B.y + B.h) - pad * 2;
+const zone = document.getElementById("zone");
+Object.assign(zone.style, { left: zx + "px", top: zy + "px", width: zw + "px", height: zh + "px" });
+const teamH = Math.round(zh * 0.62);
+
+/* --- opciones por URL --- */
+const Q = new URLSearchParams(location.search);
+const pick = (k, ok, def) => { const v = (Q.get(k) || "").toLowerCase(); return ok.includes(v) ? v : def; };
+const STYLE = pick("style", ["magma", "dex", "clasico", "cristal"], "magma");
+document.body.dataset.style = STYLE;
+document.body.dataset.badges = pick("badges", ["placa", "plano", "escudo"], "placa");
+document.body.dataset.item = pick("item", ["icono", "nombre", "ambos", "no"], "icono");
+
+/* --- equipo y medallas automáticos --- */
+const BASE = location.protocol === "http:" ? "" : "http://localhost:8765";
+const STATE_URL = BASE + "/state.json";
+const SPRITES = "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/";
+const BADGE_NAMES = ["Piedra", "Puño", "Dínamo", "Calor", "Equilibrio", "Pluma", "Mente", "Lluvia"];
+const teamEl = document.getElementById("team"), badgesEl = document.getElementById("badges");
+const statusEl = document.getElementById("status");
+Object.assign(teamEl.style, { height: (teamH - 8) + "px" });
+Object.assign(badgesEl.style, { height: (zh - teamH - 16) + "px" });
+
+const cards = [];
+for (let i = 0; i < 6; i++) {
+  const c = document.createElement("div");
+  c.className = "card empty";
+  c.innerHTML = '<div class="spr"><img alt=""><div class="itm"></div></div>' +
+    '<div class="info"><div class="nm"></div><div class="lv"></div><div class="bar"><i></i></div>' +
+    '<div class="hp"></div><div class="hn"></div></div><div class="st"></div>';
+  teamEl.appendChild(c); cards.push(c);
+}
+const badgeEls = BADGE_NAMES.map((name, i) => {
+  const b = document.createElement("div");
+  b.className = "badge off";
+  b.innerHTML = `<div class="pl"><img src="assets/badges/${i + 1}.png" alt="${name}"></div><span>${name}</span>`;
+  badgesEl.appendChild(b); return b;
+});
+
+function render(st) {
+  const party = st.party || [];
+  cards.forEach((c, i) => {
+    const p = party[i];
+    c.className = "card" + (p ? (p.hp <= 0 ? " ko" : "") : " empty");
+    const img = c.querySelector("img"), nm = c.querySelector(".nm"), lv = c.querySelector(".lv");
+    const bar = c.querySelector(".bar i"), hp = c.querySelector(".hp"), stt = c.querySelector(".st");
+    const itm = c.querySelector(".itm"), hn = c.querySelector(".hn");
+    if (!p) { img.removeAttribute("src"); img.dataset.u = ""; nm.textContent = ""; lv.textContent = "";
+              bar.style.width = "0"; hp.textContent = ""; hn.textContent = ""; itm.style.display = "none";
+              stt.style.display = "none"; return; }
+    const url = SPRITES + (p.shiny ? "shiny/" : "") + p.species + ".png";
+    if (img.dataset.u !== url) { img.dataset.u = url; img.src = url; }
+    nm.textContent = p.name || ("#" + p.species);
+    lv.textContent = "Nv. " + p.level;
+    const pct = p.max_hp ? Math.max(0, Math.min(100, p.hp / p.max_hp * 100)) : 0;
+    bar.style.width = pct + "%";
+    bar.className = pct > 50 ? "" : pct > 20 ? "mid" : "low";
+    hp.textContent = p.hp + " / " + p.max_hp;
+    if (p.item_icon) { itm.style.display = ""; itm.style.backgroundPosition = `-${p.item_icon[0]}px -${p.item_icon[1]}px`; }
+    else itm.style.display = "none";
+    hn.textContent = p.item_name ? "@ " + p.item_name : "";
+    stt.style.display = p.status ? "block" : "none"; stt.textContent = p.status || "";
+  });
+  badgeEls.forEach((b, i) => b.classList.toggle("off", !(st.badges && st.badges[i])));
+  statusEl.className = st.ok ? "" : "bad";
+  statusEl.textContent = st.ok ? "" : (st.error || "sin conexión con Azahar");
+}
+async function poll() {
+  try { render(await (await fetch(STATE_URL, { cache: "no-store" })).json()); }
+  catch (e) { statusEl.className = "bad"; statusEl.textContent = "lector no disponible"; }
+}
+poll(); setInterval(poll, 1000);
+
+/* --- brasas --- */
+const bg = document.getElementById("bg");
+for (let i = 0; i < 26; i++) {
+  const e = document.createElement("div");
+  e.className = "ember";
+  e.style.left = Math.random() * 100 + "%";
+  e.style.animationDuration = (7 + Math.random() * 9) + "s";
+  e.style.animationDelay = (-Math.random() * 14) + "s";
+  e.style.transform = `scale(${.6 + Math.random() * 1.2})`;
+  bg.appendChild(e);
+}
+</script>
+</body>
+</html>

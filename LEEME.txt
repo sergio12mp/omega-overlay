@@ -1,0 +1,24 @@
+OVERLAY AUTOMATICO OMEGA RUBY  (Azahar -> OBS)
+
+1) Azahar: Emulacion > Configurar > Depuracion > "Activar servidor RPC" (antes de arrancar el juego).
+2) Arranca el juego y carga tu partida.
+3) Prueba rapida:   python omega_reader.py --probe
+   Normal:          python omega_reader.py        (dejalo abierto mientras juegas)
+4) OBS: Fuente de navegador -> URL http://localhost:8765/ -> 1920 x 1080 (sin "archivo local").
+   Debajo, la captura de Azahar: recorte abajo 27 px, posicion X 30 Y 60, tamano 1860 x 931.
+5) Pon tu logo.png en esta misma carpeta (opcional). Con  ?preview  se ve el hueco negro del juego.
+
+Solo lee la memoria; nunca escribe. Direcciones ORAS v1.4 y v1.0 (autodetecta).
+
+PASTE DE SHOWDOWN
+  python omega_reader.py --showdown      -> imprime el equipo en formato Showdown y lo copia al portapapeles
+  http://localhost:8765/showdown          -> pagina con boton Copiar (con el lector en marcha)
+  equipo_showdown.txt                     -> se actualiza solo cuando cambia el equipo
+  Necesita pokedata.json (nombres de especies, movimientos, habilidades y objetos). Solo equipo, no las cajas.
+  Limitaciones: ignora formas alternativas (Mega, Rotom...), y objetos que Showdown no conoce no se incluyen.
+
+ESTILOS, OBJETOS Y MEDALLAS OFICIALES
+  Medallas oficiales de ORAS y iconos de objetos: sacados del Pokemon Stream Tool (carpeta assets/).
+  http://localhost:8765/styles   -> galeria con los 4 estilos y la URL de cada uno
+  Opciones en la URL de OBS:  ?style=magma|dex|clasico|cristal  &badges=placa|plano|escudo  &item=icono|nombre|ambos|no
+  Ejemplo: http://localhost:8765/?style=dex&badges=escudo&item=ambos
