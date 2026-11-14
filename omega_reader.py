@@ -35,6 +35,15 @@ import urllib.parse
 import assets as assetstore
 
 # --------------------------------------------------------------------------
+# Rutas: recursos (dentro del .exe si está empaquetado) y datos del usuario
+# --------------------------------------------------------------------------
+FROZEN = bool(getattr(sys, "frozen", False))
+APP_DIR = os.path.dirname(sys.executable) if FROZEN else os.path.dirname(os.path.abspath(__file__))
+RES_DIR = getattr(sys, "_MEIPASS", APP_DIR)
+USER_DIR = (os.path.join(os.environ.get("APPDATA") or os.path.expanduser("~"), "OmegaOverlay")
+            if FROZEN else APP_DIR)
+
+# --------------------------------------------------------------------------
 # Direcciones de memoria (ORAS). "1.4" = con el parche de día 1 (lo habitual).
 # --------------------------------------------------------------------------
 GAME_VERSIONS = {
@@ -179,7 +188,7 @@ def decrypt_pk6(raw):
 
 
 def _load_data():
-    path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "pokedata.json")
+    path = os.path.join(RES_DIR, "pokedata.json")
     try:
         with open(path, encoding="utf-8") as f:
             raw = json.load(f)
@@ -332,14 +341,29 @@ def read_state(rpc, state_ver):
 # --------------------------------------------------------------------------
 STATE = {"ok": False, "party": [], "badges": [False] * 8, "error": "arrancando…", "updated": 0}
 STATE_LOCK = threading.Lock()
-PASTE_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "equipo_showdown.txt")
+PASTE_FILE = os.path.join(USER_DIR, "equipo_showdown.txt")
 
 
-def reader_loop(rpc, interval, verbose):
+def save_paste(paste):
+    os.makedirs(os.path.dirname(PASTE_FILE), exist_ok=True)
+    with open(PASTE_FILE, "w", encoding="utf-8") as f:
+        f.write(paste)
+
+
+def find_logo():
+    """logo.png del usuario: carpeta de datos, o junto al programa."""
+    for d in (USER_DIR, APP_DIR):
+        p = os.path.join(d, "logo.png")
+        if os.path.isfile(p):
+            return p
+    return None
+
+
+def reader_loop(rpc, interval, verbose, stop=None):
     ver = None
     last_msg = None
     last_paste = [None]
-    while True:
+    while not (stop and stop.is_set()):
         try:
             st, ver = read_state(rpc, ver)
             if not st["party"]:
@@ -365,8 +389,7 @@ def reader_loop(rpc, interval, verbose):
         if paste and paste != last_paste[0]:
             last_paste[0] = paste
             try:
-                with open(PASTE_FILE, "w", encoding="utf-8") as f:
-                    f.write(paste)
+                save_paste(paste)
             except OSError:
                 pass
         if msg != last_msg or verbose:
@@ -377,7 +400,10 @@ def reader_loop(rpc, interval, verbose):
                         p["species"], p["name"], p["level"], p["hp"], p["max_hp"],
                         "  (shiny)" if p["shiny"] else ""))
             last_msg = msg
-        time.sleep(interval)
+        if stop:
+            stop.wait(interval)
+        else:
+            time.sleep(interval)
 
 
 SHOWDOWN_PAGE = """<!DOCTYPE html><html lang="es"><head><meta charset="utf-8">
@@ -404,7 +430,7 @@ ALLOWED_EXT = {".html", ".png", ".jpg", ".jpeg", ".webp", ".gif", ".svg", ".css"
 
 class Handler(http.server.SimpleHTTPRequestHandler):
     def __init__(self, *a, **k):
-        super().__init__(*a, directory=os.path.dirname(os.path.abspath(__file__)), **k)
+        super().__init__(*a, directory=RES_DIR, **k)
 
     def _cors(self):
         self.send_header("Access-Control-Allow-Origin", "*")
@@ -443,6 +469,14 @@ class Handler(http.server.SimpleHTTPRequestHandler):
 
     def do_GET(self):
         path = urllib.parse.unquote(self.path.split("?", 1)[0])
+        if path == "/logo.png":
+            logo = find_logo()
+            if not logo:
+                self.send_error(404)
+                return
+            with open(logo, "rb") as f:
+                self._send(f.read(), "image/png")
+            return
         if path.startswith("/assets/"):
             self._serve_asset(path[len("/assets/"):])
             return
@@ -495,7 +529,8 @@ class Handler(http.server.SimpleHTTPRequestHandler):
 
 class Server(socketserver.ThreadingMixIn, http.server.HTTPServer):
     daemon_threads = True
-    allow_reuse_address = True
+    # En Windows SO_REUSEADDR deja abrir el mismo puerto dos veces: ahí no se usa
+    allow_reuse_address = os.name != "nt"
 
 
 def probe(rpc):
@@ -526,6 +561,52 @@ def probe(rpc):
     return 0
 
 
+class PortInUse(Exception):
+    pass
+
+
+class Services:
+    """Lector + servidor local + descarga de recursos. Lo usan el CLI y la ventana."""
+
+    def __init__(self, port=8765, rpc_port=45987, interval=1.0, verbose=False, download=True):
+        self.port, self.rpc_port, self.interval = port, rpc_port, interval
+        self.verbose, self.download = verbose, download
+        self.stop_event = threading.Event()
+        self.server = self.rpc = None
+
+    @property
+    def panel_url(self):
+        return "http://localhost:%d/panel" % self.port
+
+    def start(self):
+        try:
+            self.server = Server(("127.0.0.1", self.port), Handler)
+        except OSError:
+            raise PortInUse("El puerto %d ya está en uso. ¿Hay otro Omega Overlay abierto? "
+                            "Ciérralo o usa otro puerto." % self.port)
+        st = ASSETS.status()
+        if not st["complete"] and self.download:
+            print("Descargando medallas e iconos oficiales (%d archivos, %d KB) a %s …" % (
+                len(st["missing"]), st["bytes_missing"] // 1024, st["dir"]))
+            ASSETS.download_in_background()
+        self.rpc = AzaharRpc(port=self.rpc_port)
+        threading.Thread(target=reader_loop, args=(self.rpc, self.interval, self.verbose, self.stop_event),
+                         daemon=True).start()
+        threading.Thread(target=self.server.serve_forever, daemon=True).start()
+
+    def open_panel(self, delay=0.0):
+        import webbrowser
+        threading.Timer(delay, webbrowser.open, args=(self.panel_url,)).start()
+
+    def stop(self):
+        self.stop_event.set()
+        if self.server:
+            self.server.shutdown()
+            self.server.server_close()
+        if self.rpc:
+            self.rpc.close()
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--probe", action="store_true", help="solo comprobar la conexión y salir")
@@ -552,8 +633,7 @@ def main():
         paste = showdown_paste(st["party"])
         print(paste or "(no hay equipo válido todavía)")
         if paste:
-            with open(PASTE_FILE, "w", encoding="utf-8") as f:
-                f.write(paste)
+            save_paste(paste)
             try:
                 import subprocess
                 subprocess.run(["clip"], input=paste.encode("utf-16"), check=True)
@@ -562,24 +642,24 @@ def main():
                 print("-> guardado en equipo_showdown.txt (no se pudo usar el portapapeles)")
         sys.exit(0)
 
-    st = ASSETS.status()
-    if not st["complete"] and not a.sin_descargas:
-        print("Descargando medallas e iconos oficiales (%d archivos, %d KB) a %s …" % (
-            len(st["missing"]), st["bytes_missing"] // 1024, st["dir"]))
-        ASSETS.download_in_background()
-    threading.Thread(target=reader_loop, args=(rpc, a.interval, a.verbose), daemon=True).start()
-    srv = Server(("127.0.0.1", a.port), Handler)
-    panel = "http://localhost:%d/panel" % a.port
-    print("Panel (elige el diseño y copia la URL para OBS): " + panel)
+    rpc.close()
+    svc = Services(port=a.port, rpc_port=a.rpc_port, interval=a.interval, verbose=a.verbose,
+                   download=not a.sin_descargas)
+    try:
+        svc.start()
+    except PortInUse as e:
+        print(e)
+        sys.exit(1)
+    print("Panel (elige el diseño y copia la URL para OBS): " + svc.panel_url)
     print("Escena completa por defecto: http://localhost:%d/   (estado: /state.json)" % a.port)
     print("Ctrl+C para salir.")
     if not a.no_browser:
-        import webbrowser
-        threading.Timer(0.5, webbrowser.open, args=(panel,)).start()
+        svc.open_panel(delay=0.5)
     try:
-        srv.serve_forever()
+        while True:
+            time.sleep(1)
     except KeyboardInterrupt:
-        pass
+        svc.stop()
 
 
 if __name__ == "__main__":

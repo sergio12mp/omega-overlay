@@ -230,5 +230,32 @@ class TestHttp(unittest.TestCase):
                 self.get(path)
 
 
+class TestServices(unittest.TestCase):
+    def free_port(self):
+        import socket
+        with socket.socket() as so:
+            so.bind(("127.0.0.1", 0))
+            return so.getsockname()[1]
+
+    def test_start_stop_and_port_in_use(self):
+        port = self.free_port()
+        with F.FakeAzaharServer(F.oras_memory("1.4", team())) as az:
+            a = R.Services(port=port, rpc_port=az.port, interval=0.1, download=False)
+            a.start()
+            try:
+                b = R.Services(port=port, rpc_port=az.port, download=False)
+                with self.assertRaises(R.PortInUse):
+                    b.start()
+                for _ in range(50):
+                    with urllib.request.urlopen("http://127.0.0.1:%d/state.json" % port, timeout=2) as r:
+                        st = json.loads(r.read())
+                    if st.get("count"):
+                        break
+                    threading.Event().wait(0.1)
+                self.assertEqual(st["count"], 3)
+            finally:
+                a.stop()
+
+
 if __name__ == "__main__":
     unittest.main()

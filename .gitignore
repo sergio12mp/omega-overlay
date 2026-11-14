@@ -13,7 +13,7 @@ __pycache__/
 *.pyc
 build/out/
 dist/
-*.spec.bak
+*.spec
 .venv/
 
 # Sistema
