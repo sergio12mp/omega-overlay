@@ -21,6 +21,16 @@ Solo lee la memoria del juego; nunca escribe en ella.
 
 Más opciones en [LEEME.txt](LEEME.txt).
 
+## Tests
+Sin emulador ni partida: los tests usan un Azahar simulado (`tests/fake_azahar.py`)
+que cifra Pokémon de ejemplo como el juego y responde al mismo protocolo RPC.
+
+```
+python -m unittest discover -s tests -v
+```
+
+Se ejecutan solos en GitHub Actions (Windows, Python 3.8 y 3.13) en cada push y PR.
+
 ## Recursos gráficos
 Las medallas oficiales y los iconos de objetos **no están en este repositorio** (son de
 Nintendo / Game Freak). Ver [NOTICE.md](NOTICE.md).

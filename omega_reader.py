@@ -115,6 +115,15 @@ class AzaharRpc:
     def reset(self):
         self.negotiated = False
 
+    def close(self):
+        self.sock.close()
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *exc):
+        self.close()
+
 
 # --------------------------------------------------------------------------
 # Descifrado PK6 (idéntico al del Stream Tool / PokeStreamer-Tools)
