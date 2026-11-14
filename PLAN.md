@@ -42,6 +42,8 @@ omega-overlay/
 Cada fase acaba con una prueba concreta; no se pasa a la siguiente sin superarla.
 
 ### Fase 0 — Repositorio y base (1-2 días)
+✅ Fase 0 completada.
+
 1. `git init`, `.gitignore` (assets de terceros, `equipo_showdown.txt`, `logo.png`, builds), `LICENSE` (MIT), `README.md` y `NOTICE.md` (créditos: Readek MIT, PKHeX como referencia, aviso de marcas de Nintendo).
 2. Subir el prototipo tal cual como primer commit (sin arte de Nintendo).
 3. Crear el repo en GitHub (privado) y empujar `main`. Ramas por tarea, PR por cada cambio.
@@ -51,10 +53,10 @@ Cada fase acaba con una prueba concreta; no se pasa a la siguiente sin superarla
 
 ### Fase 1 — Validar el prototipo con la partida real (1 semana)
 1. Refactor mínimo a la estructura `core/ server/ overlay/` sin cambiar comportamiento.
-2. Tests con RPC simulado: equipo, medallas, objetos, versión 1.0/1.4.
-3. ✅ Descargador de recursos (`assets.py`, rama `assets-descarga`): medallas ORAS e iconos de objetos desde el repositorio público de assets del Stream Tool / Showdown, con manifiesto (URL + SHA-256), reintentos y modo sin conexión.
-4. Cotejar con el juego: objetos (251, 237, 321), paste de Showdown frente a PKHeX, 3 medallas.
-5. Ver el overlay con datos reales en OBS.
+2. ✅ Tests con RPC simulado: equipo, medallas, objetos, versión 1.0/1.4.
+3. ✅ Descargador de recursos (`assets.py`): medallas ORAS e iconos de objetos desde el repositorio público de assets del Stream Tool / Showdown, con manifiesto (URL + SHA-256), reintentos y modo sin conexión.
+4. ✅ Cotejar con el juego (14-11-2026, partida real v1.0): objetos (251, 237, 321), paste de Showdown frente a PKHeX, 3 medallas.
+5. ✅ Ver el overlay con datos reales en OBS (equipo, objetos, medallas y paste correctos).
 
 **Prueba:** captura de OBS con equipo, objetos y medallas correctos; paste importado en Showdown sin errores.
 
@@ -67,7 +69,8 @@ Stream Tool (escena completa con marco), con un panel que ninguno de los dos tie
 - Escena completa: En L, Barra inferior, Columna lateral (definidas en `overlay/layouts.js`).
 - Piezas sueltas: 5 de equipo, 3 de medallas y Pokémon individual (n=1..6).
 - Medallas propias en SVG cuando no está el arte oficial.
-Pendiente: editor de distribución propia (arrastrar y soltar) y guardar presets con nombre.
+Pendiente: editor de distribución propia (arrastrar y soltar), guardar presets con nombre,
+opción de mostrar especie en vez de mote y título según el juego (Rubí Omega / Zafiro Alfa).
 
 ### Fase 2 — MVP distribuible (1-2 semanas)
 1. Ventana de escritorio mínima (Tkinter, sin dependencias): semáforo RPC / juego / versión, URL de OBS con botón copiar, selector de estilo con vista previa, botón "Copiar paste de Showdown".
