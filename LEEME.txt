@@ -1,24 +1,33 @@
-OVERLAY AUTOMATICO OMEGA RUBY  (Azahar -> OBS)
+OMEGA OVERLAY  (Pokemon Rubi Omega / Zafiro Alfa en Azahar -> OBS)
 
 1) Azahar: Emulacion > Configurar > Depuracion > "Activar servidor RPC" (antes de arrancar el juego).
 2) Arranca el juego y carga tu partida.
-3) Prueba rapida:   python omega_reader.py --probe
-   Normal:          python omega_reader.py        (dejalo abierto mientras juegas)
-4) OBS: Fuente de navegador -> URL http://localhost:8765/ -> 1920 x 1080 (sin "archivo local").
-   Debajo, la captura de Azahar: recorte abajo 27 px, posicion X 30 Y 60, tamano 1860 x 931.
-5) Pon tu logo.png en esta misma carpeta (opcional). Con  ?preview  se ve el hueco negro del juego.
+3) python omega_reader.py      (dejalo abierto mientras juegas)
+   Se abre solo el PANEL en el navegador: http://localhost:8765/panel
+4) En el panel:
+   - Elige "Escena completa" (marco con hueco para el juego) o "Piezas sueltas" (equipo, medallas o un Pokemon).
+   - Elige la distribucion y el estilo; la vista previa se actualiza al momento.
+   - Pulsa "Copiar URL" y pegala en OBS como Fuente de navegador, con el ancho y alto que indica el panel.
+   - En la escena completa, el panel te dice tambien donde colocar la captura de Azahar (X, Y y tamano).
+5) Pon tu logo.png en esta misma carpeta (opcional).
 
-Solo lee la memoria; nunca escribe. Direcciones ORAS v1.4 y v1.0 (autodetecta).
+Prueba de conexion:  python omega_reader.py --probe
+Sin emulador (demo):  python tests/demo_azahar.py
+
+DISTRIBUCIONES
+  Escena completa (1920x1080):  En L | Barra inferior | Columna lateral
+  Piezas sueltas:  equipo en fila, en columna, 2x3, 3x2, compacto; medallas en fila, 4x2, en columna;
+                   un solo Pokemon (n=1..6) para colocar cada uno donde quieras.
+  Estilos: magma, dex, clasico, cristal.  Medallas: placa, sin fondo, escudo.
 
 PASTE DE SHOWDOWN
-  python omega_reader.py --showdown      -> imprime el equipo en formato Showdown y lo copia al portapapeles
-  http://localhost:8765/showdown          -> pagina con boton Copiar (con el lector en marcha)
-  equipo_showdown.txt                     -> se actualiza solo cuando cambia el equipo
-  Necesita pokedata.json (nombres de especies, movimientos, habilidades y objetos). Solo equipo, no las cajas.
-  Limitaciones: ignora formas alternativas (Mega, Rotom...), y objetos que Showdown no conoce no se incluyen.
+  Boton "Copiar equipo para Showdown" en el panel, o:
+  python omega_reader.py --showdown   -> lo imprime y lo copia al portapapeles
+  equipo_showdown.txt                  -> se actualiza solo cuando cambia el equipo
+  Limitaciones: ignora formas alternativas (Mega, Rotom...); solo el equipo, no las cajas.
 
-ESTILOS, OBJETOS Y MEDALLAS OFICIALES
-  Medallas oficiales de ORAS y iconos de objetos: sacados del Pokemon Stream Tool (carpeta assets/).
-  http://localhost:8765/styles   -> galeria con los 4 estilos y la URL de cada uno
-  Opciones en la URL de OBS:  ?style=magma|dex|clasico|cristal  &badges=placa|plano|escudo  &item=icono|nombre|ambos|no
-  Ejemplo: http://localhost:8765/?style=dex&badges=escudo&item=ambos
+RECURSOS GRAFICOS
+  Las medallas oficiales y los iconos de objetos NO vienen con el programa (son de Nintendo).
+  Si estan en assets/ se usan; si no, se muestran medallas propias y el nombre del objeto.
+
+Solo lee la memoria; nunca escribe. Direcciones ORAS v1.4 y v1.0 (autodetecta).

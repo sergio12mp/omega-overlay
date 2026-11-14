@@ -181,7 +181,18 @@ class TestHttp(unittest.TestCase):
 
     def test_overlay_served(self):
         with self.get("/?style=dex") as r:
-            self.assertIn(b"<html", r.read().lower())
+            self.assertIn(b"escena", r.read().lower())
+
+    def test_pages(self):
+        for path, marker in (("/panel", b"Elige la distribuci"), ("/widget?tipo=medallas-fila", b"widget"),
+                             ("/overlay/core.js", b"window.OO"), ("/overlay/layouts.js", b"OOLayouts"),
+                             ("/overlay/theme.css", b".card")):
+            with self.get(path) as r:
+                self.assertIn(marker, r.read(), path)
+
+    def test_styles_redirects_to_panel(self):
+        with self.get("/styles") as r:
+            self.assertTrue(r.geturl().endswith("/panel"))
 
     def test_source_not_served(self):
         for path in ("/omega_reader.py", "/pokedata.json", "/../LICENSE"):

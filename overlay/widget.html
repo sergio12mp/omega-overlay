@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Omega Overlay — widget</title>
+<!--
+  Widget suelto para OBS (fondo transparente): una pieza por fuente de navegador.
+  http://localhost:8765/widget?tipo=equipo-fila      (ver la lista en el panel: /panel)
+  http://localhost:8765/widget?tipo=pokemon&n=1      (un solo Pokémon, del 1 al 6)
+  Opciones: style, badges, item, labels=0, demo
+-->
+<link rel="stylesheet" href="/overlay/theme.css">
+<style>
+  html,body{overflow:hidden}
+  #w{position:absolute;left:0;top:0}
+  .team.vert .card{min-height:0}
+  #status{position:absolute;left:4px;bottom:2px}
+  body.empty-hide .card.empty{visibility:hidden}
+</style>
+</head>
+<body>
+<div id="w"></div>
+<div id="status"></div>
+<script src="/overlay/core.js"></script>
+<script src="/overlay/layouts.js"></script>
+<script>
+const { Q, opt } = OO;
+const { WIDGETS, widgetSize } = OOLayouts;
+OO.applyOptions(document.body);
+if (Q.get("vacios") === "0") document.body.classList.add("empty-hide");
+
+const KEY = opt("tipo", Object.keys(WIDGETS), "equipo-fila");
+const W = WIDGETS[KEY];
+const el = document.getElementById("w");
+const size = widgetSize(KEY);
+Object.assign(el.style, { width: size.w + "px", height: size.h + "px" });
+
+let render;
+if (W.w === "badges") {
+  const r = OO.badges(el, W);
+  render = st => r(st.badges);
+} else {
+  const n = Math.min(6, Math.max(1, parseInt(Q.get("n") || "1", 10) || 1));
+  const r = OO.team(el, { cols: W.cols, rows: W.rows, vertical: W.vertical, slots: W.w === "slot" ? [n - 1] : null });
+  render = st => r(st.party);
+}
+const renderStatus = OO.status(document.getElementById("status"));
+OO.start(st => { render(st); renderStatus(st.demo ? { ok: true } : st); });
+</script>
+</body>
+</html>
