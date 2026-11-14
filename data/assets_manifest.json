@@ -1,0 +1,93 @@
+{
+  "version": 1,
+  "nota": "Arte de Nintendo / Game Freak / The Pokémon Company. No se distribuye con el programa: se descarga a la caché del usuario desde estas fuentes públicas.",
+  "sources": {
+    "stream-tool": {
+      "name": "Pokemon Stream Tool (Readek)",
+      "home": "https://github.com/Readek/Pokemon-Stream-Tool",
+      "commit": "ca92a57137f2536e9184446f503e3afcf3d5329c"
+    },
+    "showdown": {
+      "name": "Pokémon Showdown",
+      "home": "https://play.pokemonshowdown.com/"
+    }
+  },
+  "files": [
+    {
+      "path": "badges/oras/1.png",
+      "url": "https://raw.githubusercontent.com/Readek/Pokemon-Stream-Tool/ca92a57137f2536e9184446f503e3afcf3d5329c/Stream%20Tool/Resources/Assets/Badges/6/ORAS/1.png",
+      "sha256": "5f6736d323685d2b05c9e9b0f09b608d74b5cd6fd330255a665fbedeae7aaf29",
+      "size": 5058,
+      "source": "stream-tool",
+      "group": "oras"
+    },
+    {
+      "path": "badges/oras/2.png",
+      "url": "https://raw.githubusercontent.com/Readek/Pokemon-Stream-Tool/ca92a57137f2536e9184446f503e3afcf3d5329c/Stream%20Tool/Resources/Assets/Badges/6/ORAS/2.png",
+      "sha256": "20e82a8fcd2e99bc53d4526ec431a6a59147ea11e396b59238969fc6a7e01823",
+      "size": 5296,
+      "source": "stream-tool",
+      "group": "oras"
+    },
+    {
+      "path": "badges/oras/3.png",
+      "url": "https://raw.githubusercontent.com/Readek/Pokemon-Stream-Tool/ca92a57137f2536e9184446f503e3afcf3d5329c/Stream%20Tool/Resources/Assets/Badges/6/ORAS/3.png",
+      "sha256": "bfbcf3fd8df92869e87c2b6a44d998ffd1d8c679ee9828ab2151f51e03cb472a",
+      "size": 5496,
+      "source": "stream-tool",
+      "group": "oras"
+    },
+    {
+      "path": "badges/oras/4.png",
+      "url": "https://raw.githubusercontent.com/Readek/Pokemon-Stream-Tool/ca92a57137f2536e9184446f503e3afcf3d5329c/Stream%20Tool/Resources/Assets/Badges/6/ORAS/4.png",
+      "sha256": "da26c3fd549b4b5ae5fb5a16bbffc7470af6093c8b490a03eb16339a8c560e45",
+      "size": 5221,
+      "source": "stream-tool",
+      "group": "oras"
+    },
+    {
+      "path": "badges/oras/5.png",
+      "url": "https://raw.githubusercontent.com/Readek/Pokemon-Stream-Tool/ca92a57137f2536e9184446f503e3afcf3d5329c/Stream%20Tool/Resources/Assets/Badges/6/ORAS/5.png",
+      "sha256": "a2ec56a760aa8d2e98db70dcef4c4c5d48bf9c427e39c36c8d7e362dd648ffa1",
+      "size": 4849,
+      "source": "stream-tool",
+      "group": "oras"
+    },
+    {
+      "path": "badges/oras/6.png",
+      "url": "https://raw.githubusercontent.com/Readek/Pokemon-Stream-Tool/ca92a57137f2536e9184446f503e3afcf3d5329c/Stream%20Tool/Resources/Assets/Badges/6/ORAS/6.png",
+      "sha256": "94ebeb8fb882d6dd7f05ffd24c7bf45faf0a8347be02c95921ae91e51a4e0442",
+      "size": 5317,
+      "source": "stream-tool",
+      "group": "oras"
+    },
+    {
+      "path": "badges/oras/7.png",
+      "url": "https://raw.githubusercontent.com/Readek/Pokemon-Stream-Tool/ca92a57137f2536e9184446f503e3afcf3d5329c/Stream%20Tool/Resources/Assets/Badges/6/ORAS/7.png",
+      "sha256": "b8c3ec60145978de1f45b87f35fb6099ce49e2fe18346d126796f8ee380b91bb",
+      "size": 6018,
+      "source": "stream-tool",
+      "group": "oras"
+    },
+    {
+      "path": "badges/oras/8.png",
+      "url": "https://raw.githubusercontent.com/Readek/Pokemon-Stream-Tool/ca92a57137f2536e9184446f503e3afcf3d5329c/Stream%20Tool/Resources/Assets/Badges/6/ORAS/8.png",
+      "sha256": "aeb2a958b8d09456f66b0586be6324548aff7c7831196d136df95a3ff5ae47ff",
+      "size": 5079,
+      "source": "stream-tool",
+      "group": "oras"
+    },
+    {
+      "path": "itemicons-sheet.png",
+      "url": "https://play.pokemonshowdown.com/sprites/itemicons-sheet.png",
+      "sha256": "4348432f4664b55d22cd00af6b933f4a91f71e825dad88839f62a123b0f1dbc7",
+      "size": 89034,
+      "source": "showdown",
+      "group": "comun",
+      "allow_update": {
+        "type": "png",
+        "min_width": 384
+      }
+    }
+  ]
+}

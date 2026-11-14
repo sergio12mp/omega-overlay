@@ -21,6 +21,26 @@
     const probe = new Image();
     probe.onerror = () => body.classList.add("no-itemsheet");
     probe.src = "/assets/itemicons-sheet.png";
+    watchAssets();
+  }
+
+  /* Si el lector está descargando medallas e iconos, recarga una vez al terminar
+     para que OBS los muestre sin tocar nada. */
+  async function watchAssets() {
+    if (!location.protocol.startsWith("http") || Q.has("noreload")) return;
+    const get = async () => (await fetch("/assets/status.json", { cache: "no-store" })).json();
+    try {
+      const first = await get();
+      if (first.complete) return;
+      // Sigue mirando hasta que estén todos (la descarga puede lanzarse luego desde el panel)
+      const t = setInterval(async () => {
+        try {
+          const st = await get();
+          if (!st.job.running && st.present > first.present) { clearInterval(t); location.reload(); }
+          else if (st.complete) clearInterval(t);
+        } catch (e) { /* lector reiniciándose: se reintenta */ }
+      }, 5000);
+    } catch (e) { /* lector antiguo o sin conexión: nada que vigilar */ }
   }
 
   /* ---------------- Datos ---------------- */
@@ -122,7 +142,7 @@
     const items = BADGE_NAMES.map((name, i) => {
       const b = document.createElement("div");
       b.className = "badge off";
-      b.innerHTML = `<div class="pl"><img src="/assets/badges/${i + 1}.png" alt="${name}"></div><span>${name}</span>`;
+      b.innerHTML = `<div class="pl"><img src="/assets/badges/oras/${i + 1}.png" alt="${name}"></div><span>${name}</span>`;
       b.querySelector("img").onerror = function () { this.outerHTML = ownBadgeSvg(i); };
       return el.appendChild(b);
     });

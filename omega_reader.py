@@ -30,6 +30,9 @@ import struct
 import sys
 import threading
 import time
+import urllib.parse
+
+import assets as assetstore
 
 # --------------------------------------------------------------------------
 # Direcciones de memoria (ORAS). "1.4" = con el parche de día 1 (lo habitual).
@@ -367,6 +370,8 @@ this.textContent='¡Copiado!'">Copiar</button>
 &nbsp;Recarga la página para actualizar. También se guarda en equipo_showdown.txt.</p>
 <textarea id="t" readonly>%s</textarea></body></html>"""
 
+ASSETS = assetstore.AssetStore()   # medallas e iconos descargados (caché del usuario)
+
 PAGES = {
     "/": "/overlay/scene.html",          # escena completa (URL histórica de OBS)
     "/index.html": "/overlay/scene.html",
@@ -384,8 +389,42 @@ class Handler(http.server.SimpleHTTPRequestHandler):
         self.send_header("Access-Control-Allow-Origin", "*")
         self.send_header("Cache-Control", "no-store")
 
-    def do_GET(self):
+    def _send(self, body, ctype, code=200):
+        self.send_response(code)
+        self.send_header("Content-Type", ctype)
+        self.send_header("Content-Length", str(len(body)))
+        self._cors()
+        self.end_headers()
+        self.wfile.write(body)
+
+    def _json(self, obj, code=200):
+        self._send(json.dumps(obj).encode("utf-8"), "application/json; charset=utf-8", code)
+
+    def do_POST(self):
         path = self.path.split("?", 1)[0]
+        if path == "/assets/download":
+            started = ASSETS.download_in_background()
+            self._json({"started": started, "status": ASSETS.status()})
+            return
+        self.send_error(404)
+
+    def _serve_asset(self, rel):
+        if rel == "status.json":
+            self._json(ASSETS.status())
+            return
+        real = ASSETS.resolve(rel)
+        if not real or os.path.splitext(real)[1].lower() not in ALLOWED_EXT:
+            self.send_error(404)
+            return
+        with open(real, "rb") as f:
+            body = f.read()
+        self._send(body, self.guess_type(real))
+
+    def do_GET(self):
+        path = urllib.parse.unquote(self.path.split("?", 1)[0])
+        if path.startswith("/assets/"):
+            self._serve_asset(path[len("/assets/"):])
+            return
         if path == "/state.json":
             with STATE_LOCK:
                 body = json.dumps(STATE).encode("utf-8")
@@ -475,6 +514,8 @@ def main():
     ap.add_argument("--rpc-port", type=int, default=45987, help="puerto RPC de Azahar (45987)")
     ap.add_argument("--interval", type=float, default=1.0, help="segundos entre lecturas (1.0)")
     ap.add_argument("--no-browser", action="store_true", help="no abrir el panel en el navegador al arrancar")
+    ap.add_argument("--sin-descargas", action="store_true",
+                    help="no descargar medallas ni iconos oficiales (se usan los propios)")
     ap.add_argument("-v", "--verbose", action="store_true")
     a = ap.parse_args()
 
@@ -500,6 +541,11 @@ def main():
                 print("-> guardado en equipo_showdown.txt (no se pudo usar el portapapeles)")
         sys.exit(0)
 
+    st = ASSETS.status()
+    if not st["complete"] and not a.sin_descargas:
+        print("Descargando medallas e iconos oficiales (%d archivos, %d KB) a %s …" % (
+            len(st["missing"]), st["bytes_missing"] // 1024, st["dir"]))
+        ASSETS.download_in_background()
     threading.Thread(target=reader_loop, args=(rpc, a.interval, a.verbose), daemon=True).start()
     srv = Server(("127.0.0.1", a.port), Handler)
     panel = "http://localhost:%d/panel" % a.port
