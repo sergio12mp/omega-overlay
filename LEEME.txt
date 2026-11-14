@@ -19,6 +19,8 @@ DISTRIBUCIONES
   Piezas sueltas:  equipo en fila, en columna, 2x3, 3x2, compacto; medallas en fila, 4x2, en columna;
                    un solo Pokemon (n=1..6) para colocar cada uno donde quieras.
   Estilos: magma, dex, clasico, cristal.  Medallas: placa, sin fondo, escudo.
+  Nombre: mote, especie o ambos.  El titulo pone Rubi Omega o Zafiro Alfa segun el juego
+  (lo deduce del juego de origen de tu equipo); en el panel puedes escribir otro.
 
 PASTE DE SHOWDOWN
   Boton "Copiar equipo para Showdown" en el panel, o:

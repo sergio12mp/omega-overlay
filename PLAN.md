@@ -70,7 +70,8 @@ Stream Tool (escena completa con marco), con un panel que ninguno de los dos tie
 - Piezas sueltas: 5 de equipo, 3 de medallas y Pokémon individual (n=1..6).
 - Medallas propias en SVG cuando no está el arte oficial.
 Pendiente: editor de distribución propia (arrastrar y soltar), guardar presets con nombre,
-opción de mostrar especie en vez de mote y título según el juego (Rubí Omega / Zafiro Alfa).
+y nombres de especie en español (Fase 3).
+Hecho: opción mote / especie / ambos y título automático según el juego detectado.
 
 ### Fase 2 — MVP distribuible (1-2 semanas)
 1. Ventana de escritorio mínima (Tkinter, sin dependencias): semáforo RPC / juego / versión, URL de OBS con botón copiar, selector de estilo con vista previa, botón "Copiar paste de Showdown".

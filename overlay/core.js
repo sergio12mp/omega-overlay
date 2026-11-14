@@ -10,12 +10,14 @@
     style: ["magma", "dex", "clasico", "cristal"],
     badges: ["placa", "plano", "escudo"],
     item: ["icono", "nombre", "ambos", "no"],
+    nombre: ["mote", "especie", "ambos"],
   };
 
   function applyOptions(body) {
     body.dataset.style = opt("style", OPTIONS.style, "magma");
     body.dataset.badges = opt("badges", OPTIONS.badges, "placa");
     body.dataset.item = opt("item", OPTIONS.item, "icono");
+    body.dataset.nombre = opt("nombre", OPTIONS.nombre, "mote");
     if (Q.get("labels") === "0") body.classList.add("no-labels");
     // Sin la hoja de iconos (arte de terceros, se descarga aparte) se muestra el nombre del objeto
     const probe = new Image();
@@ -49,15 +51,15 @@
   const BADGE_COLORS = ["#b8a07a", "#e0703a", "#f2d23a", "#ff5a2a", "#c9c9d6", "#7ad0ff", "#ff7ad9", "#3a8aff"];
 
   const DEMO = {
-    ok: true, demo: true, game_version: "1.4", count: 6,
+    ok: true, demo: true, game_version: "1.4", count: 6, game: "OR", game_name: "Rubí Omega",
     badges: [true, true, true, false, false, false, false, false],
     party: [
-      { species: 257, name: "Blaziken", level: 36, hp: 112, max_hp: 120, item_name: "Silk Scarf", item_icon: [288, 648] },
-      { species: 277, name: "Swellow", level: 33, hp: 52, max_hp: 98, item_name: "Soft Sand", item_icon: [192, 672] },
-      { species: 282, name: "Gardevoir", level: 34, hp: 18, max_hp: 96, status: "PAR" },
-      { species: 306, name: "Aggron", level: 35, hp: 0, max_hp: 110, item_name: "Protector", item_icon: [360, 528] },
-      { species: 310, name: "Manectric", level: 32, hp: 90, max_hp: 90, shiny: true },
-      { species: 319, name: "Sharpedo", level: 31, hp: 70, max_hp: 88, status: "PSN" },
+      { species: 257, species_name: "Blaziken", name: "Pollo", level: 36, hp: 112, max_hp: 120, item_name: "Silk Scarf", item_icon: [288, 648] },
+      { species: 277, species_name: "Swellow", name: "Swellow", level: 33, hp: 52, max_hp: 98, item_name: "Soft Sand", item_icon: [192, 672] },
+      { species: 282, species_name: "Gardevoir", name: "Gardi", level: 34, hp: 18, max_hp: 96, status: "PAR" },
+      { species: 306, species_name: "Aggron", name: "Aggron", level: 35, hp: 0, max_hp: 110, item_name: "Protector", item_icon: [360, 528] },
+      { species: 310, species_name: "Manectric", name: "Rayo", level: 32, hp: 90, max_hp: 90, shiny: true },
+      { species: 319, species_name: "Sharpedo", name: "Sharpedo", level: 31, hp: 70, max_hp: 88, status: "PSN" },
     ],
   };
 
@@ -83,7 +85,7 @@
     const c = document.createElement("div");
     c.className = "card empty";
     c.innerHTML = '<div class="spr"><img alt=""><div class="itm"></div></div>' +
-      '<div class="info"><div class="nm"></div><div class="lv"></div><div class="bar"><i></i></div>' +
+      '<div class="info"><div class="nm"></div><div class="sp"></div><div class="lv"></div><div class="bar"><i></i></div>' +
       '<div class="hp"></div><div class="hn"></div></div><div class="st"></div>';
     return c;
   }
@@ -94,13 +96,18 @@
     const img = $("img"), bar = $(".bar i"), itm = $(".itm"), st = $(".st");
     if (!p) {
       img.removeAttribute("src"); img.dataset.u = "";
-      ["nm", "lv", "hp", "hn"].forEach(k => { $("." + k).textContent = ""; });
+      ["nm", "sp", "lv", "hp", "hn"].forEach(k => { $("." + k).textContent = ""; });
       bar.style.width = "0"; itm.style.display = "none"; st.style.display = "none";
       return;
     }
     const url = SPRITES + (p.shiny ? "shiny/" : "") + p.species + ".png";
     if (img.dataset.u !== url) { img.dataset.u = url; img.src = url; }
-    $(".nm").textContent = p.name || ("#" + p.species);
+    const mode = document.body.dataset.nombre || "mote";
+    const species = p.species_name || ("#" + p.species);
+    const mote = p.name || species;
+    $(".nm").textContent = mode === "especie" ? species : mote;
+    // "ambos": la especie debajo, solo si el mote es distinto
+    $(".sp").textContent = mode === "ambos" && mote.toLowerCase() !== species.toLowerCase() ? species : "";
     $(".lv").textContent = "Nv. " + p.level;
     const pct = p.max_hp ? Math.max(0, Math.min(100, p.hp / p.max_hp * 100)) : 0;
     bar.style.width = pct + "%";

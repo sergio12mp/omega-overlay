@@ -103,6 +103,36 @@ class TestReadState(unittest.TestCase):
         self.assertEqual(ver, "1.0")
 
 
+class TestGameDetection(unittest.TestCase):
+    def party(self, *games):
+        return [R.parse_pokemon(F.make_pk6(25, 5, 10, 10, name="P", game=g)) for g in games]
+
+    def test_species_name_and_origin(self):
+        p = R.parse_pokemon(F.make_pk6(282, 34, 18, 96, name="Gardi", game=26))
+        self.assertEqual((p["name"], p["species_name"], p["origin_game"]), ("Gardi", "Gardevoir", 26))
+
+    def test_majority(self):
+        self.assertEqual(R.detect_game(self.party(27, 27, 26)), 27)
+        self.assertEqual(R.detect_game(self.party(26, 26, 24, 27)), 26)
+
+    def test_other_games_do_not_vote(self):
+        # X/Y (24/25) y juegos antiguos no cuentan: un Pokémon de ORAS basta
+        self.assertEqual(R.detect_game(self.party(24, 25, 25, 26)), 26)
+
+    def test_unknown(self):
+        self.assertIsNone(R.detect_game(self.party(24, 25)))
+        self.assertIsNone(R.detect_game(self.party(26, 27)))      # empate
+        self.assertIsNone(R.detect_game([]))
+
+    def test_state_has_game(self):
+        party = [F.make_pk6(257, 36, 100, 120, name="A", game=26, pv=0x1000),
+                 F.make_pk6(28, 30, 50, 90, name="B", game=26, pv=0x2000)]
+        st, _ = R.read_state(F.MemoryRpc(F.oras_memory("1.4", party)), None)
+        self.assertEqual((st["game"], st["game_name"]), ("AS", "Zafiro Alfa"))
+        st, _ = R.read_state(F.MemoryRpc(F.FakeMemory()), None)
+        self.assertIsNone(st["game"])
+
+
 class TestShowdown(unittest.TestCase):
     def test_paste(self):
         p = R.parse_pokemon(F.make_pk6(

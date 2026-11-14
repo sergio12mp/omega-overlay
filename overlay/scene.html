@@ -8,7 +8,8 @@
   equipo, objetos y medallas leídos solos desde Azahar.
   OBS > Fuente de navegador > http://localhost:8765/?layout=ele  > 1920 x 1080
   Opciones: layout=ele|barra|columna  style=magma|dex|clasico|cristal
-            badges=placa|plano|escudo  item=icono|nombre|ambos|no  &preview  &demo
+            badges=placa|plano|escudo  item=icono|nombre|ambos|no  nombre=mote|especie|ambos
+            titulo=texto (si no, el del juego detectado)  &preview  &demo
   Lo más cómodo es elegirlo en el panel: http://localhost:8765/panel
 -->
 <link rel="stylesheet" href="/overlay/theme.css">
@@ -158,7 +159,10 @@ Object.assign(head.style, { left: Math.max(20, P.x + 20) + "px", top: "6px",
   width: (mx(T.x + T.w) - Math.max(20, P.x + 20) - 20) + "px", height: headH + "px" });
 if (headH < 40) head.style.display = "none";
 const logoImg = document.getElementById("logoImg"), logoText = document.getElementById("logoText");
-logoText.textContent = Q.get("titulo") || "Omega Ruby";
+// Sin ?titulo, el título sigue al juego detectado (Rubí Omega / Zafiro Alfa)
+const fixedTitle = Q.get("titulo");
+logoText.textContent = fixedTitle || "Rubí Omega";
+const setTitle = st => { if (!fixedTitle && st.game_name) logoText.textContent = st.game_name; };
 logoText.style.fontSize = Math.min(56, Math.round(headH * 0.55)) + "px";
 logoImg.onerror = () => { logoImg.style.display = "none"; logoText.style.display = ""; };
 logoImg.src = "/logo.png";
@@ -168,7 +172,7 @@ document.getElementById("footer").textContent = Q.get("pie") || "";
 const renderTeam = OO.team(teamEl, L.team);
 const renderBadges = OO.badges(badgesEl, L.badges);
 const renderStatus = OO.status(document.getElementById("status"));
-OO.start(st => { renderTeam(st.party); renderBadges(st.badges); renderStatus(st); });
+OO.start(st => { renderTeam(st.party); renderBadges(st.badges); renderStatus(st); setTitle(st); });
 
 /* --- brasas (solo magma) --- */
 const bg = document.getElementById("bg");

@@ -51,6 +51,23 @@ MAX_DEX = 721          # Gen 6
 
 STATUS = {1: "PAR", 2: "SLP", 3: "FRZ", 4: "BRN", 5: "PSN"}
 
+# Juego de origen en el PK6 (byte 0xDF) -> juego que se está jugando
+GAMES = {26: ("AS", "Zafiro Alfa"), 27: ("OR", "Rubí Omega")}
+
+
+def detect_game(party):
+    """Rubí Omega o Zafiro Alfa según el juego de origen de la mayoría del equipo
+    (lo capturado o recibido en la partida lleva el juego actual). None si no se sabe."""
+    votes = {}
+    for p in party:
+        if p.get("origin_game") in GAMES:
+            votes[p["origin_game"]] = votes.get(p["origin_game"], 0) + 1
+    if not votes:
+        return None
+    best = max(votes.values())
+    winners = [g for g, n in votes.items() if n == best]
+    return winners[0] if len(winners) == 1 else None
+
 # --------------------------------------------------------------------------
 # Cliente RPC de Azahar / Citra
 # --------------------------------------------------------------------------
@@ -204,6 +221,8 @@ def parse_pokemon(d):
     nature = d[0x1C]
     return {
         "species": species, "name": name, "level": level,
+        "species_name": DATA["species"].get(species),
+        "origin_game": d[0xDF],   # juego de origen (24 X, 25 Y, 26 Zafiro Alfa, 27 Rubí Omega)
         "hp": hp, "max_hp": max_hp, "shiny": shiny,
         "item": u16(0x0A), "status": STATUS.get(d[0xE8]),
         "item_name": DATA["items"].get(u16(0x0A)),
@@ -301,7 +320,9 @@ def read_state(rpc, state_ver):
     badge_byte = rpc.read(cfg["badges"], 1)[0]
     badges = [bool(badge_byte & (1 << i)) for i in range(8)]
     n_valid = sum(1 for s in best if s)
+    game = detect_game(party)
     return {"ok": True, "game_version": ver, "party": party, "badges": badges,
+            "game": GAMES[game][0] if game else None, "game_name": GAMES[game][1] if game else None,
             "count": len(party), "valid_slots": n_valid, "updated": time.time()}, \
            (ver if n_valid else None)
 
