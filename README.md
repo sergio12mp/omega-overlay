@@ -39,7 +39,7 @@ Se ejecutan solos en GitHub Actions (Windows, Python 3.8 y 3.13) en cada push y 
 
 ## Recursos gráficos
 Las medallas oficiales y los iconos de objetos **no están en este repositorio** (son de
-Nintendo / Game Freak). El programa los descarga una vez a `%APPDATA%\OmegaOverlayssets`
+Nintendo / Game Freak). El programa los descarga una vez a `%APPDATA%\OmegaOverlay\assets`
 desde fuentes públicas fijadas en [data/assets_manifest.json](data/assets_manifest.json)
 (URL + SHA-256). Sin ellos usa medallas propias. `--sin-descargas` lo desactiva.
 Ver [NOTICE.md](NOTICE.md).

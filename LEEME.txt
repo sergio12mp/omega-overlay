@@ -29,7 +29,7 @@ PASTE DE SHOWDOWN
 RECURSOS GRAFICOS
   Las medallas oficiales y los iconos de objetos NO vienen con el programa (son de Nintendo).
   Al arrancar se descargan solos una vez (unos 130 KB) desde el Pokemon Stream Tool (Readek)
-  y Pokemon Showdown, con comprobacion SHA-256, a %APPDATA%\OmegaOverlayssets.
+  y Pokemon Showdown, con comprobacion SHA-256, a %APPDATA%\OmegaOverlay\assets.
   El panel muestra si estan listos y tiene un boton para reintentar.
   python omega_reader.py --sin-descargas   -> no descarga nada; se usan medallas propias.
 
