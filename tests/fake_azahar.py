@@ -141,11 +141,15 @@ class FakeAzaharServer:
     """Responde peticiones de lectura de memoria como el servidor RPC de Azahar.
 
     accept_versions: versiones de petición que contesta (Azahar = 2, Citra = 1).
+    empty_versions: versiones a las que contesta sin datos (el Azahar real hace eso con la 1).
+    paused: si es True no contesta nada (Azahar arrancando o cargando el juego).
     """
 
-    def __init__(self, mem, accept_versions=(2,), max_chunk=4096):
+    def __init__(self, mem, accept_versions=(2,), max_chunk=4096, empty_versions=()):
         self.mem = mem
         self.accept = set(accept_versions)
+        self.empty = set(empty_versions)
+        self.paused = False
         self.max_chunk = max_chunk
         self.requests = []
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -174,7 +178,12 @@ class FakeAzaharServer:
                 continue
             ver, rid, rtype, _psize, addr, size = struct.unpack_from("<6I", msg, 0)
             self.requests.append((ver, addr, size))
-            if ver not in self.accept or rtype != 1:
+            if self.paused or rtype != 1:
+                continue
+            if ver in self.empty:
+                self.sock.sendto(struct.pack("<4I", ver, rid, 1, 0), peer)
+                continue
+            if ver not in self.accept:
                 continue  # Azahar ignora versiones que no entiende
             data = self.mem.read(addr, min(size, self.max_chunk))
             self.sock.sendto(struct.pack("<4I", ver, rid, 1, len(data)) + data, peer)

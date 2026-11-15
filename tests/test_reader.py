@@ -170,6 +170,29 @@ class TestRpcProtocol(unittest.TestCase):
                 rpc.read(0x8000000, 4)
             self.assertEqual(rpc.req_version, 1)
 
+    def test_empty_reply_does_not_pin_old_protocol(self):
+        # Azahar contesta a la versión 1 con datos vacíos. Si al arrancar la versión 2 no
+        # respondía (juego cargando), el lector no debe quedarse fijado en la 1 para siempre.
+        mem = F.oras_memory("1.0", team(), badges=0b111)
+        with F.FakeAzaharServer(mem, accept_versions=(2,), empty_versions=(1,)) as srv:
+            with R.AzaharRpc(port=srv.port, timeout=0.2) as rpc:
+                srv.accept = set()              # la 2 aún no contesta; la 1 sí, pero vacía
+                with self.assertRaises(R.RpcError):
+                    R.read_state(rpc, None)
+                rpc.reset()                     # lo que hace reader_loop tras un error
+                srv.accept = {2}
+                st, ver = R.read_state(rpc, None)
+                self.assertEqual(rpc.req_version, 2)
+        self.assertEqual((ver, st["count"]), ("1.0", 3))
+
+    def test_empty_v1_reply_is_not_accepted(self):
+        mem = F.oras_memory("1.4", team())
+        with F.FakeAzaharServer(mem, accept_versions=(2,), empty_versions=(1,)) as srv:
+            with R.AzaharRpc(port=srv.port, timeout=0.2) as rpc:
+                rpc.req_version = 1             # como si una negociación anterior hubiera elegido la 1
+                self.assertEqual(len(rpc.read(0x8000000, 4)), 4)
+                self.assertEqual(rpc.req_version, 2)
+
     def test_large_reads_are_chunked(self):
         mem = F.FakeMemory()
         mem.write(0x1000, bytes(range(256)) * 40)  # 10 240 bytes
