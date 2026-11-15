@@ -124,15 +124,20 @@ class AzaharRpc:
         while len(out) < size:
             chunk = min(size - len(out), 4096)
             if not self.negotiated:
+                # Azahar contesta a la versión 1 con datos vacíos en vez de con un error:
+                # una respuesta vacía no vale para fijar la versión.
                 err = None
-                for ver in (self.req_version, 3 - self.req_version):
+                for ver in (2, 1):
                     try:
                         data = self._roundtrip(ver, addr + len(out), chunk)
+                    except RpcError as e:
+                        err = e
+                        continue
+                    if data:
                         self.req_version = ver
                         self.negotiated = True
                         break
-                    except RpcError as e:
-                        err = e
+                    err = RpcError("lectura vacía en 0x%X" % (addr + len(out)))
                 else:
                     raise err
             else:
@@ -144,6 +149,7 @@ class AzaharRpc:
 
     def reset(self):
         self.negotiated = False
+        self.req_version = 2
 
     def close(self):
         self.sock.close()

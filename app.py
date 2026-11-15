@@ -16,7 +16,7 @@ import webbrowser
 
 import omega_reader as R
 
-VERSION = "0.2.0"
+VERSION = "0.2.1"
 
 C = {  # colores
     "bg": "#15151c", "card": "#1f1f2a", "line": "#2f2f3d", "txt": "#ececf2", "dim": "#9a9aae",
