@@ -67,6 +67,12 @@
     padding:10px 18px;border-radius:999px;font-weight:700;transition:transform .25s;z-index:10}
   .toast.show{transform:translateX(-50%) translateY(0)}
   .muted{color:var(--dim);font-size:13px}
+  .appbar{display:flex;gap:8px}
+  .appbar .btn{padding:6px 12px;font-size:14px}
+  footer{display:flex;justify-content:center;gap:14px;padding:4px 24px 18px;color:var(--dim);font-size:13px}
+  body.app{user-select:none}
+  body.app input{user-select:text}
+  body.app .pill{margin-left:auto}
   [hidden]{display:none!important}
 </style>
 </head>
@@ -75,14 +81,19 @@
   <h1>Omega <span>Overlay</span></h1>
   <span class="muted">Rubí Omega · Zafiro Alfa · Azahar → OBS</span>
   <div class="pill" id="pill" title="Pulsa para ver ayuda de conexión"><i class="dot"></i><span id="pillText">Conectando…</span></div>
+  <div class="appbar" id="appbar" hidden>
+    <button class="btn sec" id="openFolder" title="Equipo de Showdown guardado, registro y recursos descargados">Carpeta de datos</button>
+    <button class="btn sec" id="openBrowser" title="Abre este mismo panel en tu navegador">Abrir en el navegador</button>
+  </div>
 </header>
 
 <div class="help" id="help">
-  <b>¿No conecta con Azahar?</b>
+  <b style="color:var(--warn)">Activa el servidor RPC de Azahar</b>
   <ol>
-    <li>En Azahar: <b>Emulación → Configurar → Depuración → Activar servidor RPC</b>.</li>
-    <li>Actívalo <b>antes</b> de arrancar el juego (si ya estaba en marcha, ciérralo y vuelve a abrirlo).</li>
-    <li>Carga tu partida. En unos segundos este indicador se pondrá en verde.</li>
+    <li>En Azahar: <b>Emulación → Configurar → Depuración</b>.</li>
+    <li>Marca <b>«Activar servidor RPC»</b> y acepta.</li>
+    <li>Si el juego ya estaba abierto, ciérralo y vuelve a arrancarlo.</li>
+    <li>Carga tu partida. En unos segundos el indicador de arriba se pondrá en verde.</li>
   </ol>
   <p class="muted" style="margin:8px 0 0">Mientras tanto, la vista previa usa un equipo de ejemplo para que puedas elegir el diseño.</p>
 </div>
@@ -153,6 +164,7 @@
     </section>
   </div>
 </main>
+<footer id="foot" hidden><span id="ver"></span><span>Cerrar esta ventana apaga el overlay de OBS</span></footer>
 <div class="toast" id="toast"></div>
 
 <script src="/overlay/layouts.js"></script>
@@ -160,6 +172,7 @@
 const { SCENES, WIDGETS, placement, widgetSize } = OOLayouts;
 const $ = id => document.getElementById(id);
 const ORIGIN = location.origin.startsWith("http") ? location.origin : "http://localhost:8765";
+const APP = new URLSearchParams(location.search).has("app");   // dentro de la ventana de la app
 
 const STYLES = { magma: ["Magma", "#ff6a1a"], dex: ["Dex", "#28c8ff"], clasico: ["Clásico", "#c8102e"], cristal: ["Cristal", "#e8e8f0"] };
 const BADGES = { placa: "Placa", plano: "Sin fondo", escudo: "Escudo" };
@@ -299,8 +312,22 @@ $("showdown").onclick = async () => {
   } catch (e) { toast("El lector no responde", true); }
 };
 
+/* ---------- Ventana de la app ---------- */
+function api() { return window.pywebview && window.pywebview.api; }
+if (APP) {
+  document.body.classList.add("app");
+  $("appbar").hidden = $("foot").hidden = false;
+  $("openFolder").onclick = () => api() ? api().open_folder() : toast("Solo desde la app", true);
+  $("openBrowser").onclick = () => api() ? api().open_browser() : window.open(location.pathname);
+  window.addEventListener("pywebviewready", async () => {
+    const i = await api().info();
+    $("ver").textContent = `Omega Overlay v${i.version} · localhost:${i.port}`;
+  });
+}
+
 /* ---------- Estado de conexión ---------- */
-$("pill").onclick = () => $("help").classList.toggle("show");
+let helpClosed = false;   // si el usuario cierra la ayuda, no se vuelve a abrir sola
+$("pill").onclick = () => { const h = $("help").classList.toggle("show"); helpClosed = !h; };
 async function poll() {
   const pill = $("pill"), txt = $("pillText");
   let st;
@@ -317,6 +344,7 @@ async function poll() {
   } else {
     connected = false; pill.className = "pill bad";
     txt.textContent = "Sin conexión con Azahar";
+    if (!helpClosed) $("help").classList.add("show");
   }
   if (was !== connected) update();
 }

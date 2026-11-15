@@ -2,6 +2,7 @@
 
     python tests/demo_azahar.py            -> panel en http://localhost:8765/panel
     python tests/demo_azahar.py --port 8770 --no-browser
+    python tests/demo_azahar.py --app [--port 8770]   -> la app de escritorio completa
 
 El equipo simulado pierde y recupera vida cada pocos segundos para ver las animaciones.
 """
@@ -46,7 +47,16 @@ def main():
 
     threading.Thread(target=animate, daemon=True).start()
     print("Azahar simulado en UDP %d" % srv.port)
-    sys.argv = [sys.argv[0], "--rpc-port", str(srv.port)] + sys.argv[1:]
+    args = sys.argv[1:]
+    if "--app" in args:
+        sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+        import app
+        os.environ["OMEGA_RPC_PORT"] = str(srv.port)
+        if "--port" in args:
+            os.environ["OMEGA_PORT"] = args[args.index("--port") + 1]
+        app.main()
+        return
+    sys.argv = [sys.argv[0], "--rpc-port", str(srv.port)] + args
     R.main()
 
 
