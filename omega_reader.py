@@ -599,12 +599,15 @@ class Services:
         threading.Timer(delay, webbrowser.open, args=(self.panel_url,)).start()
 
     def stop(self):
+        """Apaga lector y servidor. Se puede llamar varias veces."""
         self.stop_event.set()
-        if self.server:
-            self.server.shutdown()
-            self.server.server_close()
-        if self.rpc:
-            self.rpc.close()
+        server, self.server = self.server, None
+        if server:
+            server.shutdown()
+            server.server_close()
+        rpc, self.rpc = self.rpc, None
+        if rpc:
+            rpc.close()
 
 
 def main():

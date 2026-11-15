@@ -1,18 +1,22 @@
-"""Omega Overlay — ventana de escritorio.
+"""Omega Overlay — aplicación de escritorio.
 
-Arranca el lector y el servidor local, muestra el estado (Azahar, juego, recursos)
-y guía para activar el RPC de Azahar. Cerrar la ventana apaga el overlay.
+Arranca el lector y el servidor local y abre el panel en una ventana propia
+(WebView2 de Windows, mediante pywebview): estado de Azahar, elección del diseño,
+URL para OBS y equipo para Showdown, todo dentro de la app. Si WebView2 o pywebview
+no están disponibles, se usa una ventana sencilla de Tkinter que abre el panel en
+el navegador. Cerrar la ventana apaga el overlay.
 
     python app.py            (o el .exe empaquetado)
+    OMEGA_UI=tk python app.py   fuerza la ventana sencilla
 """
 import os
 import sys
 import tkinter as tk
-from tkinter import messagebox
+import webbrowser
 
 import omega_reader as R
 
-VERSION = "0.1.0"
+VERSION = "0.2.0"
 
 C = {  # colores
     "bg": "#15151c", "card": "#1f1f2a", "line": "#2f2f3d", "txt": "#ececf2", "dim": "#9a9aae",
@@ -54,13 +58,12 @@ class App:
         self.root, self.svc = root, svc
         self.connected_once = False
         root.title("Omega Overlay")
-        for ico in (os.path.join(R.RES_DIR, "icon.ico"), os.path.join(R.RES_DIR, "build", "icon.ico")):
-            if os.path.isfile(ico):
-                try:
-                    root.iconbitmap(ico)
-                except tk.TclError:
-                    pass
-                break
+        ico = find_icon()
+        if ico:
+            try:
+                root.iconbitmap(ico)
+            except tk.TclError:
+                pass
         root.configure(bg=C["bg"])
         root.resizable(False, False)
         root.protocol("WM_DELETE_WINDOW", self.quit)
@@ -185,6 +188,87 @@ class App:
         self.root.after(1000, self.tick)
 
 
+class AppApi:
+    """Lo que el panel puede pedir a la app (window.pywebview.api.*).
+
+    Solo atributos privados: pywebview expone al JavaScript todo lo público."""
+
+    def __init__(self, svc):
+        self._svc = svc
+
+    def info(self):
+        return {"version": VERSION, "port": self._svc.port, "data_dir": R.USER_DIR}
+
+    def open_folder(self):
+        os.makedirs(R.USER_DIR, exist_ok=True)
+        os.startfile(R.USER_DIR)  # noqa: S606 (Windows)
+
+    def open_browser(self):
+        webbrowser.open(self._svc.panel_url)
+
+
+def dark_title_bar(window):
+    """Barra de título oscura en Windows 10/11 (si no se puede, se queda la normal)."""
+    try:
+        import ctypes
+        hwnd = window.native.Handle.ToInt32()
+        on = ctypes.c_int(1)
+        for attr in (20, 19):  # DWMWA_USE_IMMERSIVE_DARK_MODE (nuevo y antiguo)
+            if ctypes.windll.dwmapi.DwmSetWindowAttribute(hwnd, attr, ctypes.byref(on), ctypes.sizeof(on)) == 0:
+                break
+    except Exception:
+        pass
+
+
+def run_webview(svc):
+    """Abre el panel en una ventana propia. Devuelve False si no hay WebView2/pywebview."""
+    if os.environ.get("OMEGA_UI") == "tk":
+        return False
+    try:
+        import webview
+    except ImportError:
+        print("pywebview no está instalado: se usa la ventana sencilla.")
+        return False
+    try:
+        win = webview.create_window(
+            "Omega Overlay", svc.panel_url + "?app=1", js_api=AppApi(svc), width=1340, height=900,
+            min_size=(960, 640), background_color="#121218")
+        win.events.shown += lambda: dark_title_bar(win)
+        storage = os.path.join(R.USER_DIR, "webview")
+        os.makedirs(storage, exist_ok=True)
+        webview.start(gui="edgechromium" if os.name == "nt" else None, private_mode=False,
+                      storage_path=storage, icon=find_icon())
+        return True
+    except Exception as e:  # sin el runtime de WebView2, por ejemplo
+        print("No se pudo abrir la ventana integrada (%s): se usa la ventana sencilla." % e)
+        return False
+
+
+def find_icon():
+    for ico in (os.path.join(R.RES_DIR, "icon.ico"), os.path.join(R.RES_DIR, "build", "icon.ico")):
+        if os.path.isfile(ico):
+            return ico
+    return None
+
+
+def already_open(port):
+    msg = ("Omega Overlay ya está abierto (o hay otro programa usando el puerto %d).\n\n"
+           "Busca su ventana en la barra de tareas." % port)
+    try:
+        import ctypes
+        ctypes.windll.user32.MessageBoxW(None, msg, "Omega Overlay", 0x40)
+    except Exception:
+        print(msg)
+
+
+def run_tk(svc):
+    root = tk.Tk()
+    App(root, svc)
+    if not os.environ.get("OMEGA_NO_BROWSER"):
+        svc.open_panel(delay=1.0)
+    root.mainloop()
+
+
 def main():
     redirect_output_when_frozen()
     port = int(os.environ.get("OMEGA_PORT", "8765"))
@@ -192,19 +276,13 @@ def main():
     try:
         svc.start()
     except R.PortInUse:
-        # Lo más probable: ya está abierto. Se abre el panel del que ya funciona.
-        R.Services(port=port).open_panel()
-        root = tk.Tk()
-        root.withdraw()
-        messagebox.showinfo("Omega Overlay", "Omega Overlay ya está abierto.\n\n"
-                            "Te abro el panel en el navegador. Si no es así, otro programa usa el "
-                            "puerto %d." % port)
+        already_open(port)
         return
-    root = tk.Tk()
-    App(root, svc)
-    if not os.environ.get("OMEGA_NO_BROWSER"):
-        svc.open_panel(delay=1.0)
-    root.mainloop()
+    try:
+        if not run_webview(svc):
+            run_tk(svc)
+    finally:
+        svc.stop()
 
 
 if __name__ == "__main__":

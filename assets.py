@@ -20,7 +20,7 @@ MANIFEST_PATH = os.path.join(HERE, "data", "assets_manifest.json")
 # copia manual antigua (prototipo); OMEGA_ASSETS_LEGACY=0 la ignora
 LEGACY_DIR = (None if FROZEN or os.environ.get("OMEGA_ASSETS_LEGACY") == "0"
               else os.path.join(HERE, "assets"))
-USER_AGENT = "OmegaOverlay/0.1"
+USER_AGENT = "OmegaOverlay/0.2"
 
 
 def default_cache_dir():
@@ -86,9 +86,11 @@ class AssetStore:
             return None
         for root, path in [(self.dir, os.path.join(self.dir, *rel.split("/")))] + \
                           [(self.legacy_dir, p) for p in self._legacy_candidates(rel)]:
-            real_root = os.path.realpath(root)
-            real = os.path.realpath(path)
-            if real.startswith(real_root + os.sep) and os.path.isfile(real):
+            # abspath y no realpath: en el .exe, realpath puede devolver la carpeta y el
+            # archivo con formas distintas (p. ej. \\?\ o nombres cortos) y no casar nunca
+            real_root = os.path.normcase(os.path.abspath(root))
+            real = os.path.abspath(path)
+            if os.path.normcase(real).startswith(real_root + os.sep) and os.path.isfile(real):
                 return real
         return None
 

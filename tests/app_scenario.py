@@ -58,7 +58,14 @@ def main():
         a.copy_showdown()
         check(copied and "Blaziken" in copied[0], "paste de Showdown: %r" % copied)
 
+        api = app.AppApi(svc)             # lo que ve el JavaScript de la ventana integrada
+        info = api.info()
+        check(info["port"] == port and info["version"] == app.VERSION, "info: %r" % info)
+        public = sorted(k for k in vars(api) if not k.startswith("_"))
+        check(public == [], "AppApi expone atributos al JavaScript: %r" % public)
+
         a.quit()                          # cerrar la ventana apaga el servidor
+        svc.stop()                        # y apagar dos veces no falla
     try:
         urllib.request.urlopen("http://127.0.0.1:%d/state.json" % port, timeout=1)
         check(False, "el servidor sigue respondiendo tras cerrar")

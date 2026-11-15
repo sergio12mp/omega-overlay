@@ -21,20 +21,23 @@ Solo lee la memoria del juego; nunca escribe en ella.
 2. Ejecútalo. No pide permisos de administrador.
    Windows puede avisar con SmartScreen porque el programa aún no está firmado:
    *Más información → Ejecutar de todas formas*.
-3. Abre **Omega Overlay**. La ventana te dice si Azahar está conectado y te guía para
-   activar el RPC; el panel para OBS se abre solo en el navegador.
+3. Abre **Omega Overlay**. Todo se configura en su propia ventana: te dice si Azahar
+   está conectado, te guía para activar el RPC y te da la URL para OBS.
+   (Usa WebView2, que ya viene con Windows 10 y 11.)
 
 Tus datos (recursos descargados, `equipo_showdown.txt`, `logo.png`, registro) van en
-`%APPDATA%\OmegaOverlay` (botón «Abrir carpeta de datos»).
+`%APPDATA%\OmegaOverlay` (botón «Carpeta de datos»).
 
 ## Desde el código (requiere Python 3.8+)
 1. Azahar: *Emulación → Configurar → Depuración → Activar servidor RPC* (antes de arrancar el juego).
 2. Arranca el juego y carga tu partida.
-3. `python omega_reader.py` (con `--probe` solo comprueba la conexión).
-4. Se abre el panel (`http://localhost:8765/panel`): elige distribución y estilo, pulsa
-   **Copiar URL** y pégala en OBS como *Fuente de navegador* con el tamaño que indica.
+3. `pip install pywebview` y `python app.py` (la app con su ventana), o
+   `python omega_reader.py` (solo consola; abre el panel en el navegador; `--probe` solo comprueba la conexión).
+4. En el panel: elige distribución y estilo, pulsa **Copiar URL** y pégala en OBS como
+   *Fuente de navegador* con el tamaño que indica.
 
-¿Sin emulador a mano? `python tests/demo_azahar.py` arranca todo con un Azahar simulado.
+¿Sin emulador a mano? `python tests/demo_azahar.py --app` abre la app con un Azahar simulado
+(sin `--app`, solo el panel en el navegador).
 
 Más opciones en [LEEME.txt](LEEME.txt).
 

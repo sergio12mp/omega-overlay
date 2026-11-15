@@ -74,13 +74,19 @@ y nombres de especie en español (Fase 3).
 Hecho: opción mote / especie / ambos y título automático según el juego detectado.
 
 ### Fase 2 — MVP distribuible (1-2 semanas) — en curso
-1. ✅ Ventana de escritorio mínima (Tkinter, sin dependencias): semáforo RPC / juego / versión, URL de OBS con botón copiar, selector de estilo con vista previa, botón "Copiar paste de Showdown".
+1. ✅ Ventana de escritorio mínima (Tkinter, sin dependencias; desde la v0.2 es solo el respaldo de la app integrada): semáforo RPC / juego / versión, URL de OBS con botón copiar, selector de estilo con vista previa, botón "Copiar paste de Showdown".
 2. ✅ Guía en la ventana mientras Azahar no conecta (en vez de asistente aparte). Asistente de primer arranque: explica cómo activar el RPC en Azahar (Emulación → Configurar → Depuración) y comprueba la conexión.
 3. Mensajes de error comprensibles (RPC apagado, juego no soportado, versión de Azahar desconocida).
 4. ✅ PyInstaller `--onedir` (menos falsos positivos que `--onefile`) + instalador Inno Setup.
-5. ✅ Release [`v0.1.0`](https://github.com/sergio12mp/omega-overlay/releases/tag/v0.1.0) en GitHub con instalador y zip portable generados por CI (14-11-2026). Pendiente: pasar el repo a público (decisión aplazada).
+5. ✅ Release [`v0.1.0`](https://github.com/sergio12mp/omega-overlay/releases/tag/v0.1.0) en GitHub con instalador y zip portable generados por CI (14-11-2026). Repo público desde el 15-11-2026.
+
+6. ✅ App integrada: todo el panel dentro de una ventana propia (WebView2 vía pywebview), sin abrir el navegador.
+   Barra de título oscura, botones «Carpeta de datos» y «Abrir en el navegador», guía del RPC que se abre sola sin conexión,
+   ajustes guardados entre sesiones. Si falta WebView2, vuelve a la ventana Tkinter + navegador.
+7. ✅ Corregido: en el `.exe`, las medallas e iconos descargados no se usaban nunca (afecta a v0.1.0).
 
 **Prueba:** una persona ajena instala en un PC sin Python y ve su equipo en OBS en menos de 10 minutos.
+*Pendiente: la está haciendo un compañero.*
 
 ### Fase 3 — Completar ORAS (2-3 semanas)
 1. Formas (Mega, Rotom, Deoxys…) desde el byte de forma del PK6.

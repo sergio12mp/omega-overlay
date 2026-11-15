@@ -2,9 +2,9 @@ OMEGA OVERLAY  (Pokemon Rubi Omega / Zafiro Alfa en Azahar -> OBS)
 
 1) Azahar: Emulacion > Configurar > Depuracion > "Activar servidor RPC" (antes de arrancar el juego).
 2) Arranca el juego y carga tu partida.
-3) Abre Omega Overlay (instalado) o, desde el codigo: python app.py   (ventana)
+3) Abre Omega Overlay (instalado) o, desde el codigo: python app.py   (ventana; necesita pip install pywebview)
    o  python omega_reader.py   (solo consola). Dejalo abierto mientras juegas.
-   Se abre solo el PANEL en el navegador: http://localhost:8765/panel
+   La app muestra el PANEL en su propia ventana (la consola lo abre en el navegador: http://localhost:8765/panel).
 4) En el panel:
    - Elige "Escena completa" (marco con hueco para el juego) o "Piezas sueltas" (equipo, medallas o un Pokemon).
    - Elige la distribucion y el estilo; la vista previa se actualiza al momento.
