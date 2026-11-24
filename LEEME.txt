@@ -36,4 +36,10 @@ RECURSOS GRAFICOS
   El panel muestra si estan listos y tiene un boton para reintentar.
   python omega_reader.py --sin-descargas   -> no descarga nada; se usan medallas propias.
 
+GBA (mGBA 0.10+): hacks de pokeemerald-expansion, p. ej. Team Rocket Edition
+  1) mGBA: Herramientas > Scripting... > Archivo > Cargar script > mgba\omega_overlay.lua
+  2) Abre Omega Overlay: detecta solo si el juego esta en Azahar o en mGBA.
+  3) En el panel, Juego: GBA. Escena Team Rocket: /gba?layout=lateral|inferior
+  Team Rocket Edition no tiene medallas de gimnasio: no se muestran.
+
 Solo lee la memoria; nunca escribe. Direcciones ORAS v1.4 y v1.0 (autodetecta).

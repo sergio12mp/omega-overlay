@@ -20,7 +20,7 @@ MANIFEST_PATH = os.path.join(HERE, "data", "assets_manifest.json")
 # copia manual antigua (prototipo); OMEGA_ASSETS_LEGACY=0 la ignora
 LEGACY_DIR = (None if FROZEN or os.environ.get("OMEGA_ASSETS_LEGACY") == "0"
               else os.path.join(HERE, "assets"))
-USER_AGENT = "OmegaOverlay/0.2"
+USER_AGENT = "OmegaOverlay/0.3"
 
 
 def default_cache_dir():
