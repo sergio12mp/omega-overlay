@@ -87,6 +87,13 @@ class TestReader(unittest.TestCase):
         r = G.Gen3Reader(MemoryRpc(FG.gba_memory(live, saved_party=saved)))
         self.assertEqual(r.read_state()["party"][0]["name"], "Cobra")
 
+    def test_ignores_enemy_party_before_ours(self):
+        # en TRE el equipo rival está 600 bytes antes del nuestro y sigue ahí tras el combate
+        mem = FG.gba_memory(team())
+        mem.write(G.EWRAM + 0x0244EC - 600, FG.make_pk3(1, 2, 4, 13, pid=0x7007))
+        st = G.Gen3Reader(MemoryRpc(mem)).read_state()
+        self.assertEqual(st["party"][0]["name"], "Cobra")
+
     def test_follows_party_changes(self):
         mem = FG.gba_memory(team())
         r = G.Gen3Reader(MemoryRpc(mem))

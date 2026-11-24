@@ -366,7 +366,8 @@ async function poll() {
     connected = true; pill.className = "pill ok";
     const emu = st.platform === "gba" ? "mGBA" : "Azahar";
     const ver = st.platform === "gba" ? "" : ` v${st.game_version}`;
-    txt.textContent = `${emu} · ${st.game_name || "ORAS"}${ver} · ${st.party.length} Pokémon · ${(st.badges || []).filter(Boolean).length} medallas`;
+    const med = st.has_badges === false ? "" : ` · ${(st.badges || []).filter(Boolean).length} medallas`;
+    txt.textContent = `${emu} · ${st.game_name || "ORAS"}${ver} · ${st.party.length} Pokémon${med}`;
     // Primera conexión: el panel se pone en la consola del juego que está abierto
     if (!poll.seen && st.platform && st.platform !== S.platform) { S.platform = st.platform; buildGallery(); update(); }
     poll.seen = true;

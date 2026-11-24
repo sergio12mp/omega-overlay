@@ -23,6 +23,8 @@ BADGE_FLAG = 0x867          # FLAG_BADGE01_GET (8 seguidas)
 KNOWN_HACKS = {
     "755b3246cf8fbf35": ("TRE", "Team Rocket Edition"),   # Pokémon TRE 2026 (Dragonsden)
 }
+# Juegos sin medallas de gimnasio (TRE va por misiones): el overlay no las muestra
+NO_BADGES = {"TRE"}
 
 
 class RpcError(Exception):
@@ -357,36 +359,40 @@ class Gen3Reader:
         self.rom = None
         self.party_addr = self.sb1_ptr_addr = None
 
-    def _scan(self):
-        ewram = self.rpc.read(EWRAM, EWRAM_SIZE)
-        iwram = self.rpc.read(IWRAM, IWRAM_SIZE)
+    def _find_sb1(self, iwram, ewram):
+        """gSaveBlock1Ptr: el puntero de IWRAM a un bloque con contador de equipo y un Pokémon válido.
+        Esmeralda cambia SaveBlock1 de sitio al cambiar de mapa: se lee el puntero cada vez."""
         rom = self.rom
-        parties = find_parties(ewram)
-        # gSaveBlock1Ptr: puntero en IWRAM a un bloque cuyo equipo (copia guardada) está en la lista
-        sb1_party = {}
         for off in range(0, IWRAM_SIZE - 4, 4):
             p = struct.unpack_from("<I", iwram, off)[0]
             if EWRAM <= p < EWRAM + EWRAM_SIZE - rom.sb1_size:
                 base = p - EWRAM
                 cnt = ewram[base + rom.party_count_off]
                 if 1 <= cnt <= 6 and raw_valid(ewram[base + rom.party_off:base + rom.party_off + MON_SIZE]):
-                    self.sb1_ptr_addr = IWRAM + off
-                    sb1_party[base + rom.party_off] = True
-                    break
-        # equipo en vivo: el bloque que no es la copia de SaveBlock1, con su contador justo antes
-        live = [(s, n) for s, n in parties if s not in sb1_party]
-        best = None
-        for s, n in live:
-            for back in (3, 4, 1, 2):
-                if s >= back and ewram[s - back] == n:
-                    best = s
-                    break
-            if best is not None:
+                    return IWRAM + off, base
+        return None, None
+
+    def _scan(self):
+        rom = self.rom
+        for _ in range(3):    # si SaveBlock1 se mueve entre lecturas, se repite
+            iwram = self.rpc.read(IWRAM, IWRAM_SIZE)
+            ewram = self.rpc.read(EWRAM, EWRAM_SIZE)
+            ptr_addr, sb1 = self._find_sb1(iwram, ewram)
+            if ptr_addr is None or self.rpc.read(ptr_addr, 4) == iwram[ptr_addr - IWRAM:ptr_addr - IWRAM + 4]:
                 break
-        if best is None and live:
-            best = live[0]
-        if best is None and sb1_party:
-            best = next(iter(sb1_party))
+        self.sb1_ptr_addr = ptr_addr
+        parties = find_parties(ewram)
+        # El equipo en vivo (gPlayerParty) es un bloque que no está dentro de SaveBlock1 (allí solo
+        # hay la copia de la última partida guardada). El equipo rival (gEnemyParty) va justo
+        # 6 Pokémon antes y se queda en memoria después del combate: se descarta.
+        live = {s for s, n in parties if sb1 is None or not (sb1 <= s < sb1 + rom.sb1_size)}
+        live -= {s for s in live if s + 6 * MON_SIZE in live}
+        if live:
+            best = min(live)
+        elif sb1 is not None:
+            best = sb1 + rom.party_off       # sin equipo en vivo localizado: el último guardado
+        else:
+            best = None
         self.party_addr = EWRAM + best if best is not None else None
         self.last_scan = time.time()
 
@@ -414,7 +420,7 @@ class Gen3Reader:
                 badges = [bool(bits >> (BADGE_FLAG % 8 + i) & 1) for i in range(8)]
         name = detect_title(rom)
         return {"ok": True, "platform": "gba", "game_version": rom.expansion and "exp " + rom.expansion,
-                "party": party, "badges": badges, "game": name[0], "game_name": name[1],
+                "party": party, "badges": badges, "has_badges": name[0] not in NO_BADGES, "game": name[0], "game_name": name[1],
                 "count": len(party), "valid_slots": len(party), "updated": time.time()}
 
 

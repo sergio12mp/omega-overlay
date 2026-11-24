@@ -66,7 +66,8 @@
   /* Equipo de ejemplo para juegos de GBA (Team Rocket Edition) */
   const DEMO_GBA = {
     ok: true, demo: true, platform: "gba", game_version: "exp 1.14.4", count: 6, game: "TRE",
-    game_name: "Team Rocket Edition", badges: [true, true, false, false, false, false, false, false],
+    game_name: "Team Rocket Edition", badges: [false, false, false, false, false, false, false, false],
+    has_badges: false,
     party: [
       { species: 24, species_name: "Arbok", name: "Cobra", level: 31, hp: 88, max_hp: 92, item_name: "Restos" },
       { species: 110, species_name: "Weezing", name: "Weezing", level: 30, hp: 41, max_hp: 90, item_name: "Lodo Negro" },

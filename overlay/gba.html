@@ -125,7 +125,15 @@ document.getElementById("footer").textContent = Q.get("pie") || "";
 const renderTeam = OO.team(teamEl, L.team);
 const renderBadges = OO.badges(badgesEl, Object.assign({ set: "propias" }, L.badges));
 const renderStatus = OO.status(document.getElementById("status"));
-OO.start(st => { renderTeam(st.party); renderBadges(st.badges); renderStatus(st); setTitle(st); }, OO.DEMO_GBA);
+// Juegos sin medallas (Team Rocket Edition va por misiones): el equipo ocupa toda la zona
+const showBadges = on => {
+  badgesEl.style.display = on ? "" : "none";
+  teamEl.style.flex = on ? `0 0 calc(${L.split * 100}% - 5px)` : "1 1 0";
+};
+OO.start(st => {
+  showBadges(st.has_badges !== false);
+  renderTeam(st.party); renderBadges(st.badges); renderStatus(st); setTitle(st);
+}, OO.DEMO_GBA);
 </script>
 </body>
 </html>
