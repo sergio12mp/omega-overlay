@@ -7,7 +7,7 @@
   const opt = (k, ok, def) => { const v = (Q.get(k) || "").toLowerCase(); return ok.includes(v) ? v : def; };
 
   const OPTIONS = {
-    style: ["magma", "dex", "clasico", "cristal"],
+    style: ["magma", "dex", "clasico", "cristal", "rocket"],
     badges: ["placa", "plano", "escudo"],
     item: ["icono", "nombre", "ambos", "no"],
     nombre: ["mote", "especie", "ambos"],
@@ -63,12 +63,26 @@
     ],
   };
 
+  /* Equipo de ejemplo para juegos de GBA (Team Rocket Edition) */
+  const DEMO_GBA = {
+    ok: true, demo: true, platform: "gba", game_version: "exp 1.14.4", count: 6, game: "TRE",
+    game_name: "Team Rocket Edition", badges: [true, true, false, false, false, false, false, false],
+    party: [
+      { species: 24, species_name: "Arbok", name: "Cobra", level: 31, hp: 88, max_hp: 92, item_name: "Restos" },
+      { species: 110, species_name: "Weezing", name: "Weezing", level: 30, hp: 41, max_hp: 90, item_name: "Lodo Negro" },
+      { species: 53, species_name: "Persian", name: "Michi", level: 30, hp: 15, max_hp: 84, status: "PAR" },
+      { species: 229, species_name: "Houndoom", name: "Houndoom", level: 32, hp: 0, max_hp: 95, item_name: "Carbón" },
+      { species: 198, species_name: "Murkrow", name: "Cuervo", level: 29, hp: 70, max_hp: 70, shiny: true },
+      { species: 169, species_name: "Crobat", name: "Crobat", level: 31, hp: 80, max_hp: 96, item_name: "Banda Focus" },
+    ],
+  };
+
   const isDemo = () => Q.has("demo") && Q.get("demo") !== "0";
   const BASE = location.protocol.startsWith("http") ? "" : "http://localhost:8765";
 
   /** Llama a onState(estado) cada segundo. Con ?demo usa un equipo de ejemplo. */
-  function start(onState) {
-    if (isDemo()) { onState(DEMO); return; }
+  function start(onState, demo = DEMO) {
+    if (isDemo()) { onState(Q.get("demo") === "gba" ? DEMO_GBA : demo); return; }
     const tick = async () => {
       try {
         const r = await fetch(BASE + "/state.json", { cache: "no-store" });
@@ -91,7 +105,8 @@
   }
 
   function renderCard(c, p) {
-    c.className = "card" + (p ? (p.hp <= 0 ? " ko" : "") : " empty");
+    // Sin icono (p. ej. juegos de GBA) el objeto se muestra por su nombre
+    c.className = "card" + (p ? (p.hp <= 0 ? " ko" : "") + (p.item_name && !p.item_icon ? " noicon" : "") : " empty");
     const $ = s => c.querySelector(s);
     const img = $("img"), bar = $(".bar i"), itm = $(".itm"), st = $(".st");
     if (!p) {
@@ -142,15 +157,21 @@
         stroke="#2a1008" stroke-width=".8" font-family="Trebuchet MS,sans-serif">${i + 1}</text></svg>`;
   }
 
-  function badges(el, { cols = 4, rows = 2 } = {}) {
+  /** set: "oras" (arte oficial si está descargado) o "propias" (gemas numeradas). */
+  function badges(el, { cols = 4, rows = 2, set = "oras", names = null } = {}) {
     el.classList.add("badges");
     el.style.gridTemplateColumns = `repeat(${cols},1fr)`;
     el.style.gridTemplateRows = `repeat(${rows},1fr)`;
-    const items = BADGE_NAMES.map((name, i) => {
+    const labels = names || (set === "oras" ? BADGE_NAMES : BADGE_NAMES.map((_, i) => "Nº " + (i + 1)));
+    const items = labels.map((name, i) => {
       const b = document.createElement("div");
       b.className = "badge off";
-      b.innerHTML = `<div class="pl"><img src="/assets/badges/oras/${i + 1}.png" alt="${name}"></div><span>${name}</span>`;
-      b.querySelector("img").onerror = function () { this.outerHTML = ownBadgeSvg(i); };
+      if (set === "oras") {
+        b.innerHTML = `<div class="pl"><img src="/assets/badges/oras/${i + 1}.png" alt="${name}"></div><span>${name}</span>`;
+        b.querySelector("img").onerror = function () { this.outerHTML = ownBadgeSvg(i); };
+      } else {
+        b.innerHTML = `<div class="pl">${ownBadgeSvg(i)}</div><span>${name}</span>`;
+      }
       return el.appendChild(b);
     });
     return got => items.forEach((b, i) => b.classList.toggle("off", !(got && got[i])));
@@ -161,9 +182,9 @@
     el.classList.add("status");
     return st => {
       el.className = "status" + (st.ok ? "" : " bad");
-      el.textContent = st.ok ? (st.demo ? "datos de ejemplo" : "") : (st.error || "sin conexión con Azahar");
+      el.textContent = st.ok ? (st.demo ? "datos de ejemplo" : "") : (st.error || "sin conexión con el emulador");
     };
   }
 
-  window.OO = { Q, opt, applyOptions, start, team, badges, status, DEMO, BADGE_NAMES };
+  window.OO = { Q, opt, applyOptions, start, team, badges, status, DEMO, DEMO_GBA, BADGE_NAMES };
 })();

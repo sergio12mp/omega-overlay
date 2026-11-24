@@ -63,6 +63,9 @@
   .help{display:none;background:#2a1f10;border:1px solid #5a4318;border-radius:var(--r);padding:12px 16px;margin:0 24px}
   .help.show{display:block}
   .help ol{margin:6px 0 0;padding-left:20px}
+  .helpcols{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+  @media (max-width:1050px){.helpcols{grid-template-columns:1fr}}
+  .btn.mini{padding:2px 10px;font-size:13px;margin-left:6px}
   .toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(80px);background:var(--ok);color:#06210f;
     padding:10px 18px;border-radius:999px;font-weight:700;transition:transform .25s;z-index:10}
   .toast.show{transform:translateX(-50%) translateY(0)}
@@ -79,7 +82,7 @@
 <body>
 <header>
   <h1>Omega <span>Overlay</span></h1>
-  <span class="muted">Rubí Omega · Zafiro Alfa · Azahar → OBS</span>
+  <span class="muted" id="subtitle">Azahar / mGBA → OBS</span>
   <div class="pill" id="pill" title="Pulsa para ver ayuda de conexión"><i class="dot"></i><span id="pillText">Conectando…</span></div>
   <div class="appbar" id="appbar" hidden>
     <button class="btn sec" id="openFolder" title="Equipo de Showdown guardado, registro y recursos descargados">Carpeta de datos</button>
@@ -88,13 +91,22 @@
 </header>
 
 <div class="help" id="help">
-  <b style="color:var(--warn)">Activa el servidor RPC de Azahar</b>
+  <div class="helpcols">
+  <div><b style="color:var(--warn)">3DS · Azahar</b> (Rubí Omega / Zafiro Alfa)
   <ol>
     <li>En Azahar: <b>Emulación → Configurar → Depuración</b>.</li>
     <li>Marca <b>«Activar servidor RPC»</b> y acepta.</li>
     <li>Si el juego ya estaba abierto, ciérralo y vuelve a arrancarlo.</li>
     <li>Carga tu partida. En unos segundos el indicador de arriba se pondrá en verde.</li>
-  </ol>
+  </ol></div>
+  <div><b style="color:var(--warn)">GBA · mGBA 0.10 o superior</b> (Team Rocket Edition y otros hacks de Esmeralda)
+  <ol>
+    <li>En mGBA: <b>Herramientas → Scripting…</b></li>
+    <li>En esa ventana: <b>Archivo → Cargar script</b> y elige <code>omega_overlay.lua</code>
+      <button class="btn sec mini" id="mgbaScript" hidden>Mostrar el script</button></li>
+    <li>Deja abierta la ventana de scripting (puedes minimizarla). Hay que cargarlo cada vez que abras mGBA.</li>
+  </ol></div>
+  </div>
   <p class="muted" style="margin:8px 0 0">Mientras tanto, la vista previa usa un equipo de ejemplo para que puedas elegir el diseño.</p>
 </div>
 
@@ -102,6 +114,7 @@
   <div>
     <section>
       <h2><span class="n">1</span>¿Qué quieres añadir a OBS?</h2>
+      <div class="row" style="margin-top:0"><label>Juego</label><div class="chips" id="platform"></div></div>
       <div class="seg" id="mode">
         <button data-mode="scene"><b>Escena completa</b><small>Marco con hueco para el juego, equipo y medallas. Una sola fuente.</small></button>
         <button data-mode="widget"><b>Piezas sueltas</b><small>Equipo, medallas o un Pokémon, cada uno en su fuente. Colócalos donde quieras.</small></button>
@@ -174,21 +187,25 @@ const $ = id => document.getElementById(id);
 const ORIGIN = location.origin.startsWith("http") ? location.origin : "http://localhost:8765";
 const APP = new URLSearchParams(location.search).has("app");   // dentro de la ventana de la app
 
-const STYLES = { magma: ["Magma", "#ff6a1a"], dex: ["Dex", "#28c8ff"], clasico: ["Clásico", "#c8102e"], cristal: ["Cristal", "#e8e8f0"] };
+const STYLES = { magma: ["Magma", "#ff6a1a"], dex: ["Dex", "#28c8ff"], clasico: ["Clásico", "#c8102e"], cristal: ["Cristal", "#e8e8f0"], rocket: ["Rocket", "#d7182a"] };
+const PLATFORMS = { "3ds": "3DS · Rubí Omega / Zafiro Alfa", gba: "GBA · mGBA (Team Rocket Edition…)" };
+const { GBA_SCENES, gbaPlacement } = OOLayouts;
 const BADGES = { placa: "Placa", plano: "Sin fondo", escudo: "Escudo" };
 const ITEMS = { icono: "Icono", nombre: "Nombre", ambos: "Icono y nombre", no: "No mostrar" };
 const NAMES = { mote: "Mote", especie: "Especie", ambos: "Mote y especie" };
 
 const saved = JSON.parse(localStorage.getItem("oo-panel") || "{}");
-const S = Object.assign({ mode: "scene", scene: "ele", widget: "equipo-fila", style: "magma", badges: "placa",
+const S = Object.assign({ mode: "scene", platform: "3ds", gbaScene: "lateral", scene: "ele", widget: "equipo-fila", style: "magma", badges: "placa",
   item: "icono", nombre: "mote", n: 1, titulo: "", pie: "", labels: true, vacios: true, demo: false, hole: true }, saved);
 let connected = false;
 
 /* ---------- URLs ---------- */
 function params(forPreview) {
   const p = new URLSearchParams();
-  if (S.mode === "scene") p.set("layout", S.scene); else p.set("tipo", S.widget);
-  p.set("style", S.style); p.set("badges", S.badges); p.set("item", S.item);
+  const gbaScene = S.mode === "scene" && S.platform === "gba";
+  if (S.mode === "scene") p.set("layout", gbaScene ? S.gbaScene : S.scene); else p.set("tipo", S.widget);
+  if (!gbaScene) p.set("style", S.style);
+  p.set("badges", S.badges); p.set("item", S.item);
   if (S.nombre !== "mote") p.set("nombre", S.nombre);
   if (!S.labels) p.set("labels", "0");
   if (S.mode === "scene") { if (S.titulo) p.set("titulo", S.titulo); if (S.pie) p.set("pie", S.pie); }
@@ -197,12 +214,14 @@ function params(forPreview) {
     if (!S.vacios) p.set("vacios", "0");
   }
   if (forPreview) {
-    if (S.demo || !connected) p.set("demo", "1");
+    if (S.demo || !connected) p.set("demo", S.platform === "gba" ? "gba" : "1");
     if (S.mode === "scene" && S.hole) p.set("preview", "1");
   }
   return p;
 }
-const path = () => (S.mode === "scene" ? "/" : "/widget");
+const path = () => (S.mode === "scene" ? (S.platform === "gba" ? "/gba" : "/") : "/widget");
+const sceneList = () => (S.platform === "gba" ? GBA_SCENES : SCENES);
+const sceneKey = () => (S.platform === "gba" ? S.gbaScene : S.scene);
 const size = () => S.mode === "scene" ? { w: 1920, h: 1080 } : widgetSize(S.widget);
 
 /* ---------- Galería ---------- */
@@ -213,20 +232,21 @@ function fit(iframe, box, w, h) {
 }
 function buildGallery() {
   const g = $("gallery"); g.innerHTML = "";
-  const list = S.mode === "scene" ? SCENES : WIDGETS;
+  const list = S.mode === "scene" ? sceneList() : WIDGETS;
   Object.entries(list).forEach(([key, L]) => {
     const b = document.createElement("button");
     b.className = "lay"; b.dataset.key = key;
     b.innerHTML = `<div class="thumb"><iframe tabindex="-1" loading="lazy"></iframe></div>
       <div class="t"><b>${L.name}</b><small>${L.desc}</small></div>`;
-    b.onclick = () => { S[S.mode === "scene" ? "scene" : "widget"] = key; update(); };
+    b.onclick = () => { S[S.mode === "scene" ? (S.platform === "gba" ? "gbaScene" : "scene") : "widget"] = key; update(); };
     g.appendChild(b);
     const sz = S.mode === "scene" ? { w: 1920, h: 1080 } : widgetSize(key);
-    const p = new URLSearchParams({ style: S.style, badges: S.badges, item: S.item, nombre: S.nombre, demo: "1" });
+    const p = new URLSearchParams({ style: S.style, badges: S.badges, item: S.item, nombre: S.nombre,
+      demo: S.platform === "gba" ? "gba" : "1" });
     p.set(S.mode === "scene" ? "layout" : "tipo", key);
     if (S.mode === "scene") p.set("preview", "1");
     const fr = b.querySelector("iframe");
-    fr.src = (S.mode === "scene" ? "/" : "/widget") + "?" + p;
+    fr.src = path() + "?" + p;
     requestAnimationFrame(() => fit(fr, b.querySelector(".thumb"), sz.w, sz.h));
   });
 }
@@ -242,7 +262,7 @@ function chips(id, map, key) {
     box.appendChild(c);
   });
 }
-chips("style", STYLES, "style"); chips("badges", BADGES, "badges"); chips("item", ITEMS, "item"); chips("nombre", NAMES, "nombre");
+chips("platform", PLATFORMS, "platform"); chips("style", STYLES, "style"); chips("badges", BADGES, "badges"); chips("item", ITEMS, "item"); chips("nombre", NAMES, "nombre");
 document.querySelectorAll("#mode button").forEach(b => b.onclick = () => { S.mode = b.dataset.mode; buildGallery(); update(); });
 [["titulo", "value"], ["pie", "value"], ["slotN", "value", "n"], ["labels", "checked"], ["vacios", "checked"],
  ["demo", "checked"], ["hole", "checked"]].forEach(([id, prop, key]) => {
@@ -259,12 +279,15 @@ let lastPrev = "";
 function update() {
   localStorage.setItem("oo-panel", JSON.stringify(S));
   document.querySelectorAll("#mode button").forEach(b => b.setAttribute("aria-pressed", b.dataset.mode === S.mode));
-  const cur = S.mode === "scene" ? S.scene : S.widget;
+  const cur = S.mode === "scene" ? sceneKey() : S.widget;
   document.querySelectorAll(".lay").forEach(b => b.setAttribute("aria-pressed", b.dataset.key === cur));
-  [["style", S.style], ["badges", S.badges], ["item", S.item], ["nombre", S.nombre]].forEach(([id, v]) =>
+  [["platform", S.platform], ["style", S.style], ["badges", S.badges], ["item", S.item], ["nombre", S.nombre]].forEach(([id, v]) =>
     $(id).querySelectorAll(".chip").forEach(c => c.setAttribute("aria-pressed", c.dataset.k === v)));
   const isScene = S.mode === "scene";
   $("rowTitle").hidden = $("rowPie").hidden = !isScene;
+  $("style").closest(".row").hidden = isScene && S.platform === "gba";   // la escena GBA ya es «Rocket»
+  $("titulo").placeholder = S.platform === "gba" ? "Automático: el del juego detectado (p. ej. Team Rocket Edition)"
+    : "Automático: Rubí Omega o Zafiro Alfa (o pon logo.png junto al programa)";
   $("chkHole").hidden = !isScene;
   $("chkEmpty").hidden = isScene;
   $("rowSlot").hidden = isScene || WIDGETS[S.widget].w !== "slot";
@@ -281,7 +304,11 @@ function update() {
     `En OBS, en tu escena: <b>+</b> → <b>Navegador</b> (fuente de navegador).`,
     `Pega la URL y pon <b>Ancho ${sz.w}</b> y <b>Alto ${sz.h}</b>. Desmarca «Archivo local».`,
   ];
-  if (isScene) {
+  if (isScene && S.platform === "gba") {
+    const P = gbaPlacement(S.gbaScene);
+    steps.push(`Pon la captura de mGBA <b>debajo</b> de esta fuente: posición <b>X ${P.x}, Y ${P.y}</b>, tamaño <b>${P.w} × ${P.h}</b>. ` +
+      `Recorta la captura para que solo se vea la imagen del juego (sin la barra de menús de mGBA).`);
+  } else if (isScene) {
     const P = placement(S.scene);
     steps.push(`Pon la captura de Azahar <b>debajo</b> de esta fuente: posición <b>X ${P.x}, Y ${P.y}</b>, tamaño <b>${P.w} × ${P.h}</b>.`);
   } else if (WIDGETS[S.widget].w === "slot") {
@@ -322,6 +349,7 @@ if (APP) {
   window.addEventListener("pywebviewready", async () => {
     const i = await api().info();
     $("ver").textContent = `Omega Overlay v${i.version} · localhost:${i.port}`;
+    if (i.mgba_script) { $("mgbaScript").hidden = false; $("mgbaScript").onclick = () => api().show_mgba_script(); }
   });
 }
 
@@ -336,14 +364,19 @@ async function poll() {
   const was = connected;
   if (st.ok && st.party && st.party.length) {
     connected = true; pill.className = "pill ok";
-    txt.textContent = `Conectado · ${st.game_name || "ORAS"} v${st.game_version} · ${st.party.length} Pokémon · ${(st.badges || []).filter(Boolean).length} medallas`;
+    const emu = st.platform === "gba" ? "mGBA" : "Azahar";
+    const ver = st.platform === "gba" ? "" : ` v${st.game_version}`;
+    txt.textContent = `${emu} · ${st.game_name || "ORAS"}${ver} · ${st.party.length} Pokémon · ${(st.badges || []).filter(Boolean).length} medallas`;
+    // Primera conexión: el panel se pone en la consola del juego que está abierto
+    if (!poll.seen && st.platform && st.platform !== S.platform) { S.platform = st.platform; buildGallery(); update(); }
+    poll.seen = true;
     $("help").classList.remove("show");
   } else if (st.ok) {
     connected = false; pill.className = "pill warn";
-    txt.textContent = "Azahar responde, pero no hay partida cargada";
+    txt.textContent = (st.platform === "gba" ? "mGBA" : "Azahar") + " responde, pero aún no hay equipo";
   } else {
     connected = false; pill.className = "pill bad";
-    txt.textContent = "Sin conexión con Azahar";
+    txt.textContent = "Sin conexión con Azahar ni mGBA";
     if (!helpClosed) $("help").classList.add("show");
   }
   if (was !== connected) update();

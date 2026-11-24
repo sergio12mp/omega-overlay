@@ -51,6 +51,31 @@
     return { x: r(x), y: r(y), w: r(w), h: r(C.h * s), s };
   }
 
+  /* ---------- Escena completa para GBA (una pantalla 3:2, tema Team Rocket) ----------
+     hole: dónde va la captura de mGBA (solo la imagen del juego, 240x160 escalada). */
+  const GBA_SCENES = {
+    lateral: {
+      name: "Juego + columna",
+      desc: "El juego a la izquierda; equipo y medallas en una columna a la derecha.",
+      hole: { x: 24, y: 104, w: 1416, h: 944 },
+      zone: { x: 1464, y: 104, w: 432, h: 944 }, dir: "col", split: 0.8,
+      head: { x: 24, y: 10, w: 1872, h: 84 },
+      team: { cols: 1, rows: 6 }, badges: { cols: 4, rows: 2 },
+    },
+    inferior: {
+      name: "Juego + barra",
+      desc: "El juego centrado arriba; los 6 Pokémon en fila abajo y las medallas a los lados.",
+      hole: { x: 348, y: 16, w: 1224, h: 816 },
+      zone: { x: 24, y: 852, w: 1872, h: 212 }, dir: "row", split: 0.76,
+      head: { x: 24, y: 16, w: 300, h: 816 }, vhead: true,
+      team: { cols: 6, rows: 1, vertical: true }, badges: { cols: 4, rows: 2 },
+    },
+  };
+  function gbaPlacement(key) {
+    const H = (GBA_SCENES[key] || GBA_SCENES.lateral).hole;
+    return { x: H.x, y: H.y, w: H.w, h: H.h, s: H.w / 240 };
+  }
+
   /* ---------- Widgets sueltos (cada uno es una fuente de navegador) ---------- */
   const CARD_W = 300, CARD_H = 96, GAP = 6;
   const BADGE_W = 72, BADGE_H = 80;
@@ -75,5 +100,5 @@
     return { w: W.cols * cw + (W.cols - 1) * GAP, h: W.rows * ch + (W.rows - 1) * GAP };
   }
 
-  window.OOLayouts = { CAPTURE, SCENES, placement, WIDGETS, widgetSize };
+  window.OOLayouts = { CAPTURE, SCENES, placement, GBA_SCENES, gbaPlacement, WIDGETS, widgetSize };
 })();

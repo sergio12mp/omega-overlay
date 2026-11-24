@@ -197,7 +197,15 @@ class AppApi:
         self._svc = svc
 
     def info(self):
-        return {"version": VERSION, "port": self._svc.port, "data_dir": R.USER_DIR}
+        return {"version": VERSION, "port": self._svc.port, "data_dir": R.USER_DIR,
+                "mgba_script": bool(mgba_script_source())}
+
+    def show_mgba_script(self):
+        """Copia el script de mGBA a la carpeta de datos (ruta fija y fácil) y lo señala en el Explorador."""
+        path = install_mgba_script()
+        if path:
+            import subprocess
+            subprocess.Popen(["explorer", "/select,", path])  # noqa: S603,S607 (Windows)
 
     def open_folder(self):
         os.makedirs(R.USER_DIR, exist_ok=True)
@@ -205,6 +213,27 @@ class AppApi:
 
     def open_browser(self):
         webbrowser.open(self._svc.panel_url)
+
+
+def mgba_script_source():
+    p = os.path.join(R.RES_DIR, "mgba", "omega_overlay.lua")
+    return p if os.path.isfile(p) else None
+
+
+def install_mgba_script():
+    """Deja una copia al día del script en la carpeta de datos y devuelve su ruta."""
+    src = mgba_script_source()
+    if not src:
+        return None
+    dst_dir = os.path.join(R.USER_DIR, "mgba")
+    os.makedirs(dst_dir, exist_ok=True)
+    dst = os.path.join(dst_dir, "omega_overlay.lua")
+    if os.path.abspath(src) != os.path.abspath(dst):
+        with open(src, "rb") as f:
+            data = f.read()
+        with open(dst, "wb") as f:
+            f.write(data)
+    return dst
 
 
 def dark_title_bar(window):
