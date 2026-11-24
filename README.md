@@ -1,7 +1,11 @@
 # Omega Overlay
 
-Overlay automático para OBS que lee el **equipo, los objetos y las medallas** de
-**Pokémon Rubí Omega / Zafiro Alfa** mientras juegas en el emulador **Azahar**.
+Overlay automático para OBS que lee el **equipo, los objetos y las medallas** mientras juegas:
+
+- **Pokémon Rubí Omega / Zafiro Alfa** en el emulador **Azahar** (3DS).
+- **Hacks de GBA hechos con pokeemerald-expansion**, como **Pokémon Team Rocket Edition**,
+  en el emulador **mGBA** 0.10 o superior (con un pequeño script; ver más abajo).
+
 Solo lee la memoria del juego; nunca escribe en ella.
 
 > Estado: prototipo. Plan de desarrollo en [PLAN.md](PLAN.md).
@@ -15,6 +19,16 @@ Solo lee la memoria del juego; nunca escribe en ella.
 - 4 estilos (`magma`, `dex`, `clasico`, `cristal`) y 3 fondos de medallas.
 - Exporta el equipo en formato Pokémon Showdown con un clic.
 - Detecta solo la versión del juego (1.0 o 1.4), también en ROMs randomizadas.
+- GBA: escena temática **Team Rocket** (juego + columna o juego + barra) y estilo `rocket`
+  para las piezas sueltas. Especies, objetos y movimientos con los nombres de la propia ROM.
+
+## mGBA (juegos de GBA)
+mGBA no deja leer su memoria desde fuera, así que Omega Overlay trae un script que lo
+permite (solo lectura y solo desde tu PC):
+1. En mGBA: *Herramientas → Scripting…*
+2. En esa ventana: *Archivo → Cargar script* → `omega_overlay.lua`
+   (en la app, botón «Mostrar el script» de la ayuda de conexión; en el código, `mgba/`).
+3. Deja abierta la ventana de scripting. Hay que cargarlo cada vez que abras mGBA.
 
 ## Instalar (Windows)
 1. Descarga `OmegaOverlay-X.Y.Z-instalador.exe` de la página de *Releases* (o el `.zip` portable).

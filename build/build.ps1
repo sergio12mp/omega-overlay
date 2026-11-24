@@ -11,7 +11,7 @@ if (-not (Test-Path ".venv\Scripts\python.exe")) { python -m venv .venv }
 & .venv\Scripts\python.exe -m PyInstaller --noconfirm --clean --windowed --onedir `
     --name OmegaOverlay --icon build\icon.ico `
     --distpath dist --workpath build\out `
-    --add-data "overlay;overlay" --add-data "data;data" `
+    --add-data "overlay;overlay" --add-data "data;data" --add-data "mgba;mgba" `
     --add-data "pokedata.json;." --add-data "build\icon.ico;." `
     --add-data "LICENSE;." --add-data "NOTICE.md;." `
     app.py

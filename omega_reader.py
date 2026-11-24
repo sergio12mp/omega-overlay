@@ -33,6 +33,7 @@ import time
 import urllib.parse
 
 import assets as assetstore
+import gen3
 
 # --------------------------------------------------------------------------
 # Rutas: recursos (dentro del .exe si está empaquetado) y datos del usuario
@@ -260,17 +261,20 @@ def showdown_paste(party):
     """Texto en formato Pokémon Showdown para importar el equipo."""
     blocks = []
     for p in party:
-        sp = DATA["species"].get(p["species"], "Pokemon-%d" % p["species"])
+        # Los de GBA (gen3) traen IDs de la ROM: objeto con su nombre de la ROM y
+        # movimientos/habilidad con numeración oficial (inglés si lo tenemos, si no el de la ROM)
+        g3 = "move_ids" in p
+        sp = DATA["species"].get(p["species"]) or p.get("species_name") or "Pokemon-%d" % p["species"]
         head = sp
         if p["nicknamed"] and p["name"] and p["name"].lower() != sp.lower():
             head = "%s (%s)" % (p["name"], sp)
         if p["gender"]:
             head += " (%s)" % p["gender"]
-        item = DATA["items"].get(p["item"])
+        item = p.get("item_name") if g3 else DATA["items"].get(p["item"])
         if item:
             head += " @ " + item
         lines = [head]
-        ab = DATA["abilities"].get(p["ability"])
+        ab = DATA["abilities"].get(p["ability_id"] if g3 else p["ability"])
         if ab:
             lines.append("Ability: " + ab)
         if p["level"] != 100:
@@ -286,8 +290,13 @@ def showdown_paste(party):
         ivs = ["%d %s" % (p["ivs"][k], k) for k in order if p["ivs"][k] != 31]
         if ivs:
             lines.append("IVs: " + " / ".join(ivs))
-        for m in p["moves"]:
-            mv = DATA["moves"].get(m)
+        if g3:
+            ids = [m for m in p["move_ids"] if m]
+            moves = [DATA["moves"].get(m) or (p["move_names"][i] if i < len(p["move_names"]) else None)
+                     for i, m in enumerate(ids)]
+        else:
+            moves = [DATA["moves"].get(m) for m in p["moves"]]
+        for mv in moves:
             if mv:
                 lines.append("- " + mv)
         blocks.append("\n".join(lines))
@@ -365,22 +374,81 @@ def find_logo():
     return None
 
 
+class OrasSource:
+    """Rubí Omega / Zafiro Alfa en Azahar (o Citra)."""
+    label = "Azahar"
+
+    def __init__(self, rpc):
+        self.rpc, self.ver = rpc, None
+
+    def read_state(self):
+        try:
+            st, self.ver = read_state(self.rpc, self.ver)
+        except RpcError:
+            self.ver = None
+            raise
+        st.setdefault("platform", "3ds")
+        return st
+
+    def reset(self):
+        self.rpc.reset()
+        self.ver = None
+
+
+class Gen3Source:
+    """Juegos de GBA (hacks de pokeemerald-expansion) en mGBA con el script del puente."""
+    label = "mGBA"
+
+    def __init__(self, rpc):
+        self.reader = gen3.Gen3Reader(rpc)
+
+    def read_state(self):
+        try:
+            return self.reader.read_state()
+        except gen3.RpcError as e:
+            raise RpcError(str(e))
+
+    def reset(self):
+        self.reader.reset()
+
+
+def as_sources(src):
+    """Acepta un AzaharRpc suelto (como antes), una fuente o una lista de fuentes."""
+    if isinstance(src, (list, tuple)):
+        return list(src)
+    if hasattr(src, "read_state"):
+        return [src]
+    return [OrasSource(src)]
+
+
 def reader_loop(rpc, interval, verbose, stop=None):
-    ver = None
+    sources = as_sources(rpc)
+    active = 0
     last_msg = None
     last_paste = [None]
     while not (stop and stop.is_set()):
         try:
-            st, ver = read_state(rpc, ver)
+            errors = []
+            for k in [active] + [i for i in range(len(sources)) if i != active]:
+                try:
+                    st = sources[k].read_state()
+                    active = k
+                    break
+                except RpcError as e:
+                    sources[k].reset()
+                    errors.append((sources[k].label, str(e)))
+            else:
+                raise RpcError("; ".join("%s: %s" % x for x in errors))
             if not st["party"]:
                 st["error"] = "conectado, esperando un equipo válido (¿partida cargada?)"
-            msg = "OK  v%s  equipo=%d  medallas=%d" % (
-                st["game_version"], st["count"], sum(st["badges"]))
+            msg = "OK  %s  v%s  equipo=%d  medallas=%d" % (
+                st.get("game_name") or "", st["game_version"], st["count"], sum(st["badges"]))
         except RpcError as e:
-            rpc.reset()
-            ver = None
-            st = {"ok": False, "party": [], "badges": [False] * 8, "updated": time.time(),
-                  "error": "sin respuesta de Azahar (%s). ¿RPC activado y juego en marcha?" % e}
+            if len(sources) == 1 and sources[0].label == "Azahar":
+                err = "sin respuesta de Azahar (%s). ¿RPC activado y juego en marcha?" % str(e)
+            else:
+                err = "sin respuesta de Azahar ni de mGBA (%s)" % e
+            st = {"ok": False, "party": [], "badges": [False] * 8, "updated": time.time(), "error": err}
             msg = "SIN CONEXIÓN: " + st["error"]
         except Exception as e:  # nunca matar el hilo
             st = {"ok": False, "party": [], "badges": [False] * 8, "updated": time.time(),
@@ -430,6 +498,7 @@ PAGES = {
     "/index.html": "/overlay/scene.html",
     "/panel": "/overlay/panel.html",     # panel de configuración con vista previa
     "/widget": "/overlay/widget.html",   # piezas sueltas
+    "/gba": "/overlay/gba.html",         # escena completa para GBA (tema Team Rocket)
 }
 ALLOWED_EXT = {".html", ".png", ".jpg", ".jpeg", ".webp", ".gif", ".svg", ".css", ".js", ".woff2", ".ttf"}
 
@@ -574,8 +643,10 @@ class PortInUse(Exception):
 class Services:
     """Lector + servidor local + descarga de recursos. Lo usan el CLI y la ventana."""
 
-    def __init__(self, port=8765, rpc_port=45987, interval=1.0, verbose=False, download=True):
+    def __init__(self, port=8765, rpc_port=45987, interval=1.0, verbose=False, download=True, mgba_port=45988):
         self.port, self.rpc_port, self.interval = port, rpc_port, interval
+        self.mgba_port = mgba_port
+        self.mgba = None
         self.verbose, self.download = verbose, download
         self.stop_event = threading.Event()
         self.server = self.rpc = None
@@ -596,7 +667,9 @@ class Services:
                 len(st["missing"]), st["bytes_missing"] // 1024, st["dir"]))
             ASSETS.download_in_background()
         self.rpc = AzaharRpc(port=self.rpc_port)
-        threading.Thread(target=reader_loop, args=(self.rpc, self.interval, self.verbose, self.stop_event),
+        self.mgba = gen3.MgbaRpc(port=self.mgba_port)
+        sources = [OrasSource(self.rpc)] + ([Gen3Source(self.mgba)] if self.mgba_port else [])
+        threading.Thread(target=reader_loop, args=(sources, self.interval, self.verbose, self.stop_event),
                          daemon=True).start()
         threading.Thread(target=self.server.serve_forever, daemon=True).start()
 
@@ -614,6 +687,9 @@ class Services:
         rpc, self.rpc = self.rpc, None
         if rpc:
             rpc.close()
+        mg, self.mgba = self.mgba, None
+        if mg:
+            mg.close()
 
 
 def main():

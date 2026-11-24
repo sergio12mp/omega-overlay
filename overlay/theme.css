@@ -37,6 +37,18 @@ body[data-style=cristal]{
   --sub:#ffe3a6; --dim:#e8e8e8; --radius:16px;
   --plate:rgba(255,255,255,.12); --plate-bd:rgba(255,255,255,.4); --lbl:#ffe3a6;
 }
+body[data-style=rocket]{
+  --zone-bg:linear-gradient(180deg,rgba(8,8,10,.92),rgba(24,4,8,.9));
+  --zone-bd:#d7182a; --zone-glow:rgba(215,24,42,.35);
+  --card-bg:linear-gradient(110deg,rgba(28,28,32,.96) 0%,rgba(12,12,14,.96) 62%,rgba(70,6,14,.96) 100%);
+  --card-bd:rgba(215,24,42,.85); --card-in:rgba(215,24,42,.18);
+  --txt:#f4f4f6; --sub:#ff3b4a; --dim:#c6c6cc; --bar-bg:rgba(255,255,255,.08); --radius:2px;
+  --plate:radial-gradient(circle at 40% 35%,#3a3a42,#0b0b0e 75%);
+  --plate-bd:#d7182a; --lbl:#f4f4f6;
+}
+body[data-style=rocket] .card{border-left:4px solid #d7182a;
+  clip-path:polygon(0 0,calc(100% - 14px) 0,100% 14px,100% 100%,0 100%)}
+body[data-style=rocket] .card .nm{text-transform:uppercase;letter-spacing:.5px}
 
 /* ---------- Zona con marco ---------- */
 .zone{position:absolute;border-radius:10px;background:var(--zone-bg);border:2px solid var(--zone-bd);
@@ -70,6 +82,7 @@ body.no-itemsheet .itm{display:none}
 .card .hn{font-size:11px;color:var(--sub);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:700}
 body[data-item=icono] .hn,body[data-item=no] .hn{display:none}
 body.no-itemsheet[data-item=icono] .hn{display:block}
+body[data-item=icono] .card.noicon .hn{display:block}
 .card .st{display:none;position:absolute;right:6px;top:4px;font-size:11px;font-weight:800;
   padding:1px 5px;border-radius:4px;background:#6a1a8a;color:#fff}
 

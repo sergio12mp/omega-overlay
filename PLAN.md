@@ -88,6 +88,18 @@ Hecho: opción mote / especie / ambos y título automático según el juego dete
 **Prueba:** una persona ajena instala en un PC sin Python y ve su equipo en OBS en menos de 10 minutos.
 *Pendiente: la está haciendo un compañero.*
 
+### Fase 2b — GBA: Team Rocket Edition (v0.3.0) ✅
+Adelantado a petición del autor (juega a Pokémon TRE 2026 de Dragonsden en mGBA).
+1. ✅ Puente para mGBA: `mgba/omega_overlay.lua` (TCP 127.0.0.1:45988, solo lectura).
+2. ✅ Lector `gen3.py` para hacks de pokeemerald-expansion: tablas de la cabecera GF de la ROM
+   (especies, objetos y movimientos con nombres en español), PK3 ampliado (motes de 12 letras),
+   equipo en vivo (distinto del rival y de la copia guardada) y medallas por flags.
+3. ✅ La app prueba Azahar y mGBA y se queda con el que responda.
+4. ✅ Escena `/gba` con tema Team Rocket (2 distribuciones) y estilo `rocket`; panel con selector de juego.
+5. ✅ Probado con la partida real (24-11-2026).
+Pendiente: las misiones de TRE (no tiene medallas), iconos de objetos desde la ROM,
+nombres en inglés para Showdown de gen 7-9, Esmeralda original.
+
 ### Fase 3 — Completar ORAS (2-3 semanas)
 1. Formas (Mega, Rotom, Deoxys…) desde el byte de forma del PK6.
 2. Nombres en español de objetos, movimientos y especies.
